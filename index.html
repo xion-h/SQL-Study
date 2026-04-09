@@ -79,16 +79,16 @@
         };
 
         const curriculum = [
-            { day: 1, title: "데이터 필터링", syntax: "SELECT * FROM 테이블 WHERE 조건;", hint: "지역='서울', 나이 30대, 가입일 '2024-03-01' 이후 조건을 AND로 연결하세요.", question: "2024년 3월 1일 이후 가입한 서울 지역의 30대 고객 명단을 추출하세요.", solution: "SELECT * FROM Customers WHERE 1=1 AND 지역 = '서울' AND 나이 BETWEEN 30 AND 39 AND 가입일 >= '2024-03-01';", token: "XN-A1-82" },
-            { day: 2, title: "데이터 가공과 정렬", syntax: "CASE WHEN 조건 THEN 값 ELSE 값 END, ORDER BY 컬럼 DESC;", hint: "30미만 '청년', 50미만 '중년', 나머지는 '장년'입니다.", question: "고객을 연령대별(청년<30, 중년<50, 장년>=50)로 분류하고 나이가 많은 순으로 정렬하세요.", solution: "SELECT 이름, 나이, CASE WHEN 나이 < 30 THEN '청년' WHEN 나이 < 50 THEN '중년' ELSE '장년' END as 연령그룹 FROM Customers ORDER BY 나이 DESC;", token: "XN-B2-19" },
-            { day: 3, title: "통계 요약 (JOIN)", syntax: "JOIN 테이블 ON 조건, GROUP BY 컬럼, COUNT(), SUM();", hint: "고객ID로 연결하고 지역별로 묶으세요.", question: "지역별 고객 수와 해당 지역의 총 매출액 합계를 계산하세요.", solution: "SELECT C.지역, COUNT(DISTINCT C.고객ID) as 고객수, SUM(U.매출액) as 총매출 FROM Customers C JOIN Usage U ON C.고객ID = U.고객ID GROUP BY C.지역;", token: "XN-C3-44" },
-            { day: 4, title: "NULL 처리 및 매칭", syntax: "LEFT JOIN, IFNULL(컬럼, '대체값')", hint: "미가입자 포함은 LEFT JOIN이 필수입니다.", question: "전체 고객의 이름과 요금제ID를 매칭하되, 요금제가 없으면 '미가입'으로 표시하세요.", solution: "SELECT C.이름, IFNULL(S.요금제ID, '미가입') as 요금제정보 FROM Customers C LEFT JOIN Subscriptions S ON C.고객ID = S.고객ID;", token: "XN-D4-07" },
-            { day: 5, title: "범위 필터링 (IN)", syntax: "WHERE 컬럼 IN (값1, 값2)", hint: "서울과 인천 지역을 동시에 필터링하세요.", question: "서울이나 인천 지역에 거주하는 고객들의 명단을 추출하세요.", solution: "SELECT * FROM Customers WHERE 지역 IN ('서울', '인천');", token: "XN-E5-11" },
-            { day: 6, title: "평균값 집계", syntax: "AVG(컬럼), ROUND(값, 2)", hint: "나이의 평균을 소수점 둘째자리까지 반올림하세요.", question: "서울 지역 고객들의 평균 나이를 계산하세요. (소수점 둘째자리까지)", solution: "SELECT ROUND(AVG(나이), 2) as 평균나이 FROM Customers WHERE 지역 = '서울';", token: "XN-F6-22" },
-            { day: 7, title: "날짜 계산 기초", syntax: "JULIANDAY('날짜'), CAST(수치 AS INTEGER)", hint: "가입일부터 현재(2024-04-10)까지 며칠이 지났는지 구하세요.", question: "고객별로 가입한 지 며칠이 지났는지 계산하세요. (기준: 2024-04-10)", solution: "SELECT 이름, CAST(JULIANDAY('2024-04-10') - JULIANDAY(가입일) AS INTEGER) as 경과일 FROM Customers;", token: "XN-G7-33" },
-            { day: 8, title: "문자열 가공", syntax: "SUBSTR(컬럼, 시작, 길이), || (결합)", hint: "이름의 첫 글자와 고객ID를 결합하세요.", question: "이름의 첫 성씨와 고객ID를 결합하여 '관리명' 컬럼을 만드세요. (예: 김_C-001)", solution: "SELECT SUBSTR(이름, 1, 1) || '_' || 고객ID as 관리명 FROM Customers;", token: "XN-H8-44" },
-            { day: 9, title: "데이터 그룹 분석", syntax: "HAVING 집계조건", hint: "총 매출이 3,000원이 넘는 지역만 뽑으세요.", question: "지역별 총 매출액을 구하고, 그 중 매출 합계가 3,000원을 초과하는 지역만 조회하세요.", solution: "SELECT C.지역, SUM(U.매출액) as 총매출 FROM Customers C JOIN Usage U ON C.고객ID = U.고객ID GROUP BY C.지역 HAVING 총매출 > 3000;", token: "XN-I9-55" },
-            { day: 10, title: "최종 실무 리포트", syntax: "서브쿼리 활용: WHERE 컬럼 IN (SELECT ...)", hint: "전체 평균은 (SELECT AVG(매출액) FROM Usage)로 구합니다.", question: "서울 지역 고객 중 총 매출액이 전체 평균 매출보다 높은 고객의 이름을 출력하세요.", solution: "SELECT 이름 FROM Customers WHERE 1=1 AND 지역 = '서울' AND 고객ID IN (SELECT 고객ID FROM Usage WHERE 매출액 > (SELECT AVG(매출액) FROM Usage));", token: "XN-Z0-99" }
+            { day: 1, title: "데이터 필터링", tables: ["Customers"], syntax: "SELECT * FROM 테이블 WHERE 조건;", hint: "지역='서울', 나이 30대, 가입일 '2024-03-01' 이후 조건을 AND로 연결하세요.", question: "2024년 3월 1일 이후 가입한 서울 지역의 30대 고객 명단을 추출하세요.", solution: "SELECT * FROM Customers WHERE 1=1 AND 지역 = '서울' AND 나이 BETWEEN 30 AND 39 AND 가입일 >= '2024-03-01';", token: "XN-A1-82" },
+            { day: 2, title: "데이터 가공과 정렬", tables: ["Customers"], syntax: "CASE WHEN 조건 THEN 값 ELSE 값 END, ORDER BY 컬럼 DESC;", hint: "30미만 '청년', 50미만 '중년', 나머지는 '장년'입니다.", question: "고객을 연령대별(청년<30, 중년<50, 장년>=50)로 분류하고 나이가 많은 순으로 정렬하세요.", solution: "SELECT 이름, 나이, CASE WHEN 나이 < 30 THEN '청년' WHEN 나이 < 50 THEN '중년' ELSE '장년' END as 연령그룹 FROM Customers ORDER BY 나이 DESC;", token: "XN-B2-19" },
+            { day: 3, title: "통계 요약 (JOIN)", tables: ["Customers", "Usage"], syntax: "JOIN 테이블 ON 조건, GROUP BY 컬럼, COUNT(), SUM();", hint: "고객ID로 연결하고 지역별로 묶으세요.", question: "지역별 고객 수와 해당 지역의 총 매출액 합계를 계산하세요.", solution: "SELECT C.지역, COUNT(DISTINCT C.고객ID) as 고객수, SUM(U.매출액) as 총매출 FROM Customers C JOIN Usage U ON C.고객ID = U.고객ID GROUP BY C.지역;", token: "XN-C3-44" },
+            { day: 4, title: "NULL 처리 및 매칭", tables: ["Customers", "Subscriptions"], syntax: "LEFT JOIN, IFNULL(컬럼, '대체값')", hint: "미가입자 포함은 LEFT JOIN이 필수입니다.", question: "전체 고객의 이름과 요금제ID를 매칭하되, 요금제가 없으면 '미가입'으로 표시하세요.", solution: "SELECT C.이름, IFNULL(S.요금제ID, '미가입') as 요금제정보 FROM Customers C LEFT JOIN Subscriptions S ON C.고객ID = S.고객ID;", token: "XN-D4-07" },
+            { day: 5, title: "범위 필터링 (IN)", tables: ["Customers"], syntax: "WHERE 컬럼 IN (값1, 값2)", hint: "서울과 인천 지역을 동시에 필터링하세요.", question: "서울이나 인천 지역에 거주하는 고객들의 명단을 추출하세요.", solution: "SELECT * FROM Customers WHERE 지역 IN ('서울', '인천');", token: "XN-E5-11" },
+            { day: 6, title: "평균값 집계", tables: ["Customers"], syntax: "AVG(컬럼), ROUND(값, 2)", hint: "나이의 평균을 소수점 둘째자리까지 반올림하세요.", question: "서울 지역 고객들의 평균 나이를 계산하세요. (소수점 둘째자리까지)", solution: "SELECT ROUND(AVG(나이), 2) as 평균나이 FROM Customers WHERE 지역 = '서울';", token: "XN-F6-22" },
+            { day: 7, title: "날짜 계산 기초", tables: ["Customers"], syntax: "JULIANDAY('날짜'), CAST(수치 AS INTEGER)", hint: "가입일부터 현재(2024-04-10)까지 며칠이 지났는지 구하세요.", question: "고객별로 가입한 지 며칠이 지났는지 계산하세요. (기준: 2024-04-10)", solution: "SELECT 이름, CAST(JULIANDAY('2024-04-10') - JULIANDAY(가입일) AS INTEGER) as 경과일 FROM Customers;", token: "XN-G7-33" },
+            { day: 8, title: "문자열 가공", tables: ["Customers"], syntax: "SUBSTR(컬럼, 시작, 길이), || (결합)", hint: "이름의 첫 글자와 고객ID를 결합하세요.", question: "이름의 첫 성씨와 고객ID를 결합하여 '관리명' 컬럼을 만드세요. (예: 김_C-001)", solution: "SELECT SUBSTR(이름, 1, 1) || '_' || 고객ID as 관리명 FROM Customers;", token: "XN-H8-44" },
+            { day: 9, title: "데이터 그룹 분석", tables: ["Customers", "Usage"], syntax: "HAVING 집계조건", hint: "총 매출이 3,000원이 넘는 지역만 뽑으세요.", question: "지역별 총 매출액을 구하고, 그 중 매출 합계가 3,000원을 초과하는 지역만 조회하세요.", solution: "SELECT C.지역, SUM(U.매출액) as 총매출 FROM Customers C JOIN Usage U ON C.고객ID = U.고객ID GROUP BY C.지역 HAVING 총매출 > 3000;", token: "XN-I9-55" },
+            { day: 10, title: "최종 실무 리포트", tables: ["Customers", "Usage"], syntax: "서브쿼리 활용: WHERE 컬럼 IN (SELECT ...)", hint: "전체 평균은 (SELECT AVG(매출액) FROM Usage)로 구합니다.", question: "서울 지역 고객 중 총 매출액이 전체 평균 매출보다 높은 고객의 이름을 출력하세요.", solution: "SELECT 이름 FROM Customers WHERE 1=1 AND 지역 = '서울' AND 고객ID IN (SELECT 고객ID FROM Usage WHERE 매출액 > (SELECT AVG(매출액) FROM Usage));", token: "XN-Z0-99" }
         ];
 
         function ResultTable({ data, title }) {
@@ -135,7 +135,6 @@
                 if (!db) return;
                 setIsCorrect(null); setShowHint(false);
                 try {
-                    // 유선상 발생할 수 있는 특수 공백 제거 및 쿼리 실행
                     const cleanedQuery = userQuery.replace(/\u00a0/g, ' ');
                     const active = curriculum.find(c => c.day === currentDay) || curriculum[0];
                     const userRes = db.exec(cleanedQuery);
@@ -143,7 +142,6 @@
                     
                     if (userRes.length > 0) {
                         setQueryResult(userRes[0]);
-                        // 논리 검증: 행 데이터를 문자열화하여 정렬 후 비교 (순서 무관하게 결과 집합 일치 확인)
                         const normalize = (res) => JSON.stringify([...res[0].values].sort((a,b) => JSON.stringify(a).localeCompare(JSON.stringify(b))));
                         const match = normalize(userRes) === normalize(answerRes);
                         
@@ -179,9 +177,8 @@
                     </header>
 
                     <main className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                        {/* Left Col: Mission Info */}
                         <div className="lg:col-span-4 space-y-6">
-                            <section className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm text-left animate-fade">
+                            <section className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm text-left animate-fade h-full">
                                 <h2 className="text-sm font-black text-blue-600 uppercase tracking-widest mb-2">MISSION {active.day}</h2>
                                 <h3 className="text-xl font-bold text-slate-900 mb-4 tracking-tight">{active.title}</h3>
                                 <div className="bg-blue-50 p-4 rounded-xl mb-6">
@@ -196,16 +193,15 @@
                             </section>
                         </div>
 
-                        {/* Right Col: Schema (Top) + SQL Editor (Bottom) */}
                         <div className="lg:col-span-8 space-y-6 flex flex-col">
-                            {/* Data Schema Reference: Now fixed at the top of the right column */}
+                            {/* Data Schema Reference: Filtered by active.tables */}
                             <div className="space-y-3 text-left animate-fade">
                                 <div className="flex items-center gap-2 px-1">
                                     <CustomIcon name="layout" className="w-4 h-4 text-slate-400" />
-                                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Data Schema Reference</h3>
+                                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Required Tables Reference</h3>
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                    {Object.keys(schemaData).map(name => (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {active.tables.map(name => (
                                         <div key={name} className="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm hover:border-blue-200 transition-all">
                                             <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest block mb-1.5 flex items-center gap-1">
                                                 <CustomIcon name="database" className="w-3 h-3" /> {name}
@@ -213,7 +209,7 @@
                                             <div className="overflow-x-auto custom-scrollbar">
                                                 <table className="w-full text-[8px] text-left">
                                                     <thead><tr className="border-b text-slate-400 font-bold">{schemaData[name].columns.map(c => <th key={c} className="px-1 py-1 uppercase">{c}</th>)}</tr></thead>
-                                                    <tbody>{schemaData[name].samples.slice(0,2).map((row, i) => <tr key={i} className="border-b border-slate-50 last:border-0">{row.map((val, j) => <td key={j} className="px-1 py-1 font-mono text-slate-500 whitespace-nowrap">{String(val)}</td>)}</tr>)}</tbody>
+                                                    <tbody>{schemaData[name].samples.slice(0,3).map((row, i) => <tr key={i} className="border-b border-slate-50 last:border-0">{row.map((val, j) => <td key={j} className="px-1 py-1 font-mono text-slate-500 whitespace-nowrap">{String(val)}</td>)}</tr>)}</tbody>
                                                 </table>
                                             </div>
                                         </div>
@@ -221,12 +217,11 @@
                                 </div>
                             </div>
 
-                            {/* SQL Editor Area */}
                             <div className="bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col border border-slate-700">
                                 <div className="bg-slate-800 px-8 py-4 border-b border-slate-700 flex justify-between items-center"><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">SQL Editor</span></div>
-                                <textarea className="p-8 bg-slate-900 text-blue-100 font-mono text-sm focus:outline-none resize-none h-[300px] leading-relaxed sql-editor" placeholder="-- 상단의 스키마를 참고하여 미션을 해결하는 쿼리를 작성하세요." value={userQuery} onChange={e => setUserQuery(e.target.value)}></textarea>
+                                <textarea className="p-8 bg-slate-900 text-blue-100 font-mono text-sm focus:outline-none resize-none h-[300px] leading-relaxed sql-editor" placeholder="-- 상단의 테이블 스키마를 참고하여 쿼리를 작성하세요." value={userQuery} onChange={e => setUserQuery(e.target.value)}></textarea>
                                 <div className="p-6 bg-slate-800 border-t border-slate-700 flex justify-end">
-                                    <button onClick={runQuery} className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-3.5 rounded-2xl font-black text-sm shadow-xl active:scale-95 transition-all flex items-center gap-2">
+                                    <button onClick={runQuery} className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-3 rounded-2xl font-black text-sm shadow-xl active:scale-95 transition-all flex items-center gap-2">
                                         <CustomIcon name="play" className="w-4 h-4 fill-current" /> RUN MISSION
                                     </button>
                                 </div>
@@ -241,7 +236,7 @@
                             </div>
                         </div>
                     </main>
-                    <footer className="bg-white border-t p-8 text-slate-300 text-[10px] font-black uppercase tracking-[0.4em] text-center mt-10">SQL Mastery Course v3.3 - 10 Days Full Course</footer>
+                    <footer className="bg-white border-t p-8 text-slate-300 text-[10px] font-black uppercase tracking-[0.4em] text-center mt-10">SQL Mastery Course v3.4 - 10 Days Full Course</footer>
                 </div>
             );
         }
