@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL 10일 완성: 실무 마스터</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700;900&display=swap');
+        body { font-family: 'Pretendard', sans-serif; -webkit-font-smoothing: antialiased; margin: 0; background: #f8fafc; }
+        .sql-editor { font-family: 'Fira Code', 'Cascadia Code', monospace !important; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        button:disabled { cursor: not-allowed; opacity: 0.5; }
+        .animate-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="text-slate-800 text-left">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const Icon = ({ name, className = "w-5 h-5" }) => {
+            const iconRef = useRef(null);
+            useEffect(() => {
+                if (window.lucide && iconRef.current) {
+                    window.lucide.createIcons({ targets: [iconRef.current] });
+                }
+            }, [name]);
+            return (
+                <span className="inline-flex items-center justify-center">
+                    <i ref={iconRef} data-lucide={name} className={className}></i>
+                </span>
+            );
+        };
+
+        const schemaData = {
+            Customers: {
+                desc: "고객 기본 정보",
+                columns: ["고객ID", "이름", "나이", "지역", "가입일"],
+                types: ["TEXT", "TEXT", "INTEGER", "TEXT", "DATE"],
+                samples: [
+                    ["C-001", "김철수", 32, "서울", "2024-03-01"],
+                    ["C-002", "이영희", 28, "경기", "2024-03-05"],
+                    ["C-003", "박민수", 54, "서울", "2024-02-20"],
+                    ["C-004", "최지우", 35, "서울", "2024-02-15"], 
+                    ["C-005", "정다은", 31, "인천", "2024-03-10"]
+                ]
+            },
+            Usage: {
+                desc: "사용량 정보",
+                columns: ["고객ID", "매출액"],
+                types: ["TEXT", "INTEGER"],
+                samples: [["C-001", 3500], ["C-002", 1200], ["C-004", 4200]]
+            }
+        };
+
+        const curriculum = [
+            { day: 1, title: "데이터 필터링의 정석", theory: [{ key: "WHERE", val: "조건 관리" }], question: "2024년 3월 1일 이후 가입한 서울 지역의 30대 고객을 추출하세요.", solution: "SELECT *\\nFROM Customers\\nWHERE\\n  1=1\\n  AND 지역 = '서울'\\n  AND 나이 BETWEEN 30 AND 39\\n  AND 가입일 >= '2024-03-01'\\n;", explanation: "가입일 조건을 통해 최지우(C-004) 고객을 거르는 것이 포인트입니다." },
+            { day: 2, title: "데이터 가공과 정렬", theory: [{ key: "CASE", val: "레이블링" }], question: "고객을 연령대별로 분류하고 나이가 많은 순으로 정렬하세요.", solution: "SELECT 이름, 나이, CASE WHEN 나이 < 50 THEN '청장년' ELSE '장년' END as 구분\\nFROM Customers\\nORDER BY 나이 DESC\\n;", explanation: "CASE WHEN으로 데이터를 그룹화합니다." },
+            { day: 10, title: "최종 실무 리포트", theory: [{ key: "Subquery", val: "종합 역량" }], question: "전체 평균 매출보다 많이 쓴 고객의 이름을 찾으세요.", solution: "SELECT 이름\\nFROM Customers\\nWHERE 고객ID IN (SELECT 고객ID FROM Usage WHERE 매출액 > (SELECT AVG(매출액) FROM Usage))\\n;", explanation: "복합 서브쿼리를 활용한 최종 문제입니다." }
+        ];
+
+        function ResultTable({ data, title }) {
+            if (!data) return null;
+            return (
+                <div className="mt-6 border rounded-xl overflow-hidden bg-white shadow-sm border-slate-200 animate-in">
+                    <div className="bg-slate-800 text-white px-4 py-2 text-[10px] font-bold uppercase tracking-widest">{title}</div>
+                    <div className="overflow-x-auto custom-scrollbar">
+                        <table className="w-full text-[11px] text-left border-collapse">
+                            <thead><tr className="bg-slate-50 border-b">{data.columns.map(c => <th key={c} className="px-4 py-2 font-bold uppercase">{c}</th>)}</tr></thead>
+                            <tbody>{data.values.map((row, i) => <tr key={i} className="border-b last:border-0 hover:bg-slate-50">{row.map((val, j) => <td key={j} className="px-4 py-2 font-mono">{String(val)}</td>)}</tr>)}</tbody>
+                        </table>
+                    </div>
+                </div>
+            );
+        }
+
+        function App() {
+            const [currentDay, setCurrentDay] = useState(1);
+            const [userQuery, setUserQuery] = useState("");
+            const [db, setDb] = useState(null);
+            const [queryResult, setQueryResult] = useState(null);
+            const [isCorrect, setIsCorrect] = useState(null);
+            const [showSolution, setShowSolution] = useState(false);
+
+            useEffect(() => {
+                initSqlJs({ locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.wasm` }).then(SQL => {
+                    const database = new SQL.Database();
+                    database.run("CREATE TABLE Customers (고객ID TEXT, 이름 TEXT, 나이 INTEGER, 지역 TEXT, 가입일 DATE)");
+                    schemaData.Customers.samples.forEach(row => database.run("INSERT INTO Customers VALUES (?,?,?,?,?)", row));
+                    database.run("CREATE TABLE Usage (고객ID TEXT, 매출액 INTEGER)");
+                    schemaData.Usage.samples.forEach(row => database.run("INSERT INTO Usage VALUES (?,?)", row));
+                    setDb(database);
+                });
+            }, []);
+
+            const runQuery = () => {
+                if (!db) return;
+                setIsCorrect(null);
+                try {
+                    const active = curriculum.find(c => c.day === currentDay) || curriculum[0];
+                    const userRes = db.exec(userQuery);
+                    const answerRes = db.exec(active.solution);
+                    if (userRes.length > 0) {
+                        setQueryResult(userRes[0]);
+                        if (JSON.stringify(userRes[0]) === JSON.stringify(answerRes[0])) setIsCorrect(true);
+                        else setIsCorrect(false);
+                    } else { setIsCorrect(false); }
+                } catch (e) { setIsCorrect(false); }
+            };
+
+            const active = curriculum.find(c => c.day === currentDay) || curriculum[0];
+
+            return (
+                <div className="min-h-screen flex flex-col">
+                    <nav className="bg-white border-b p-4 sticky top-0 z-50 shadow-sm">
+                        <div className="max-w-7xl mx-auto flex justify-between items-center">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-blue-600 p-2 rounded-xl shadow-lg"><Icon name="database" className="text-white" /></div>
+                                <h1 className="text-xl font-black text-slate-900 tracking-tighter uppercase">SQL MISSION MASTER</h1>
+                            </div>
+                            <div className="flex gap-1 overflow-x-auto pb-1 max-w-md">
+                                {[1,2,10].map(d => (
+                                    <button key={d} onClick={() => {setCurrentDay(d); setUserQuery(""); setQueryResult(null); setIsCorrect(null); setShowSolution(false);}} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${currentDay === d ? "bg-blue-600 text-white shadow-md" : "bg-white text-slate-400 border border-slate-200"}`}>Day {d}</button>
+                                ))}
+                            </div>
+                        </div>
+                    </nav>
+
+                    <main className="flex-grow max-w-7xl mx-auto w-full p-6 lg:p-10 grid grid-cols-1 lg:grid-cols-12 gap-10">
+                        <div className="lg:col-span-4 space-y-6">
+                            <section className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm text-left">
+                                <h2 className="text-2xl font-black text-slate-900 mb-4">{active.title}</h2>
+                                <p className="bg-slate-900 p-6 rounded-2xl text-blue-50 italic text-sm shadow-inner mb-6 font-medium leading-relaxed">"{active.question}"</p>
+                                <div className="flex gap-3 p-4 bg-amber-50 rounded-2xl border border-amber-100 text-amber-800 text-[10px] font-bold uppercase tracking-widest"><Icon name="info" className="w-4 h-4" /> 실습 데이터에는 C-001~C-005까지 5명의 데이터가 로드되어 있습니다.</div>
+                            </section>
+                            <div className="space-y-4">
+                                <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] px-2 flex items-center gap-2"><Icon name="layout" className="w-4 h-4" /> Data Schema View</h3>
+                                {Object.keys(schemaData).map(name => (
+                                    <div key={name} className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm flex flex-col text-left">
+                                        <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest block mb-2">{name}</span>
+                                        <div className="overflow-x-auto custom-scrollbar"><table className="w-full text-[10px] text-left"><thead><tr className="text-slate-400 border-b">{schemaData[name].columns.map(c => <th key={c} className="px-2 py-1 uppercase">{c}</th>)}</tr></thead><tbody>{schemaData[name].samples.map((row, i) => <tr key={i} className="border-b border-slate-50 last:border-0">{row.map((val, j) => <td key={j} className="px-2 py-1 font-mono text-slate-600">{String(val)}</td>)}</tr>)}</tbody></table></div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="lg:col-span-8 space-y-8">
+                            <div className="bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col border border-slate-700 text-left">
+                                <div className="bg-slate-800 px-8 py-4 border-b border-slate-700 flex justify-between items-center"><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">SQL Editor</span></div>
+                                <textarea className="p-8 bg-slate-900 text-blue-100 font-mono text-sm focus:outline-none resize-none h-[300px] leading-relaxed sql-editor" placeholder="-- 직접 쿼리를 작성해 보세요." value={userQuery} onChange={e => setUserQuery(e.target.value)}></textarea>
+                                <div className="p-6 bg-slate-800 border-t border-slate-700 flex justify-between items-center">
+                                    <button onClick={() => setShowSolution(!showSolution)} className="text-xs font-bold text-slate-400 hover:text-white">정답/해설 보기</button>
+                                    <button onClick={runQuery} className="bg-blue-600 hover:bg-blue-500 text-white px-10 py-3 rounded-2xl font-black shadow-lg shadow-blue-900/40 active:scale-95 transition-all text-xs uppercase tracking-widest"><Icon name="play" className="w-4 h-4 mr-2" /> Run & Grade</button>
+                                </div>
+                                {isCorrect !== null && (
+                                    <div className="p-8 bg-slate-950 border-t border-slate-800 animate-in">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h5 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest tracking-widest">Grading Status</h5>
+                                            {isCorrect ? <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm tracking-tighter"><Icon name="check-circle" className="w-4 h-4" /> 정답입니다! 논리적 검증 완료.</div> : <div className="flex items-center gap-2 text-rose-400 font-bold text-sm tracking-tighter"><Icon name="x-circle" className="w-4 h-4" /> 결과 불일치: 다시 시도하세요.</div>}
+                                        </div>
+                                        {queryResult && <ResultTable data={queryResult} title="Actual Query Output" />}
+                                    </div>
+                                )}
+                            </div>
+
+                            {showSolution && (
+                                <div className="bg-white border border-slate-200 p-10 rounded-[3rem] shadow-xl text-left animate-in">
+                                    <h4 className="text-blue-600 font-black flex items-center gap-2 text-lg mb-8 uppercase tracking-widest italic"><Icon name="award" className="w-6 h-6" /> Best Practice Logic</h4>
+                                    <div className="space-y-8">
+                                        <div><h5 className="font-bold text-slate-400 text-[10px] uppercase tracking-widest mb-3">1. SQL 정석 쿼리</h5><pre className="bg-slate-900 p-8 rounded-3xl border border-slate-800 text-[13px] font-mono text-blue-300 overflow-x-auto whitespace-pre shadow-inner">{active.solution}</pre></div>
+                                        <div><h5 className="font-bold text-slate-400 text-[10px] uppercase tracking-widest mb-3">2. 상세 로직 해설</h5><p className="text-[15px] text-slate-600 leading-loose bg-slate-50 p-8 rounded-3xl border border-slate-100 font-medium whitespace-pre-wrap">{active.explanation}</p></div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </main>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
