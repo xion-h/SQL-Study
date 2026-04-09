@@ -194,7 +194,6 @@
                         </div>
 
                         <div className="lg:col-span-8 space-y-6 flex flex-col">
-                            {/* Data Schema Reference: Filtered by active.tables */}
                             <div className="space-y-3 text-left animate-fade">
                                 <div className="flex items-center gap-2 px-1">
                                     <CustomIcon name="layout" className="w-4 h-4 text-slate-400" />
@@ -209,7 +208,7 @@
                                             <div className="overflow-x-auto custom-scrollbar">
                                                 <table className="w-full text-[8px] text-left">
                                                     <thead><tr className="border-b text-slate-400 font-bold">{schemaData[name].columns.map(c => <th key={c} className="px-1 py-1 uppercase">{c}</th>)}</tr></thead>
-                                                    <tbody>{schemaData[name].samples.slice(0,3).map((row, i) => <tr key={i} className="border-b border-slate-50 last:border-0">{row.map((val, j) => <td key={j} className="px-1 py-1 font-mono text-slate-500 whitespace-nowrap">{String(val)}</td>)}</tr>)}</tbody>
+                                                    <tbody>{schemaData[name].samples.map((row, i) => <tr key={i} className="border-b border-slate-50 last:border-0">{row.map((val, j) => <td key={j} className="px-1 py-1 font-mono text-slate-500 whitespace-nowrap">{String(val)}</td>)}</tr>)}</tbody>
                                                 </table>
                                             </div>
                                         </div>
