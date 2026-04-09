@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL 10일 완성: 실시간 채점 마스터</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- SQL.js Library (Browser SQL Engine) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap');
+        body { font-family: 'Pretendard', sans-serif; }
+        .sql-editor { font-family: 'Fira Code', 'Cascadia Code', monospace; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        button:disabled { cursor: not-allowed; opacity: 0.5; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 text-left">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const Icon = ({ name, className = "w-5 h-5" }) => {
+            const iconRef = useRef(null);
+            useEffect(() => {
+                if (window.lucide && iconRef.current) {
+                    window.lucide.createIcons({ targets: [iconRef.current] });
+                }
+            }, [name]);
+            return (
+                <span className="inline-flex items-center justify-center">
+                    <i ref={iconRef} data-lucide={name} className={className}></i>
+                </span>
+            );
+        };
+
+        const schemaData = {
+            Customers: {
+                desc: "고객 기본 정보",
+                columns: ["고객ID", "이름", "나이", "지역", "가입일"],
+                types: ["TEXT", "TEXT", "INTEGER", "TEXT", "DATE"],
+                samples: [
+                    ["C-001", "김철수", 32, "서울", "2024-03-01"],
+                    ["C-002", "이영희", 28, "경기", "2024-03-05"],
+                    ["C-003", "박민수", 54, "서울", "2024-02-20"],
+                    ["C-004", "최지우", 35, "서울", "2024-02-15"], 
+                    ["C-005", "정다은", 31, "인천", "2024-03-10"]
+                ]
+            },
+            Plans: {
+                desc: "요금제 종류",
+                columns: ["요금제ID", "요금제명", "월정액", "서비스유형"],
+                types: ["TEXT", "TEXT", "INTEGER", "TEXT"],
+                samples: [
+                    ["P_01", "5G 무제한 95", 95000, "Mobile"],
+                    ["P_02", "LTE 실속 33", 33000, "Mobile"],
+                    ["P_03", "IPTV 베이직", 15000, "IPTV"]
+                ]
+            },
+            Subscriptions: {
+                desc: "가입 및 해지 이력",
+                columns: ["가입ID", "고객ID", "요금제ID", "상태", "시작일", "종료일"],
+                types: ["TEXT", "TEXT", "TEXT", "TEXT", "DATE", "DATE"],
+                samples: [
+                    ["S-101", "C-001", "P_01", "Active", "2024-03-01", null],
+                    ["S-102", "C-002", "P_02", "Churned", "2024-03-05", "2024-04-01"],
+                    ["S-103", "C-004", "P_01", "Active", "2024-02-15", null]
+                ]
+            },
+            Usage: {
+                desc: "일자별 사용량 및 매출",
+                columns: ["고객ID", "사용일자", "데이터사용량", "통화량", "매출액"],
+                types: ["TEXT", "DATE", "REAL", "INTEGER", "INTEGER"],
+                samples: [
+                    ["C-001", "2024-04-05", 1.2, 120, 3500],
+                    ["C-002", "2024-04-05", 0.5, 45, 1200],
+                    ["C-004", "2024-04-05", 2.1, 80, 4200]
+                ]
+            }
+        };
+
+        const curriculum = [
+            {
+                day: 1,
+                title: "데이터 필터링의 정석",
+                theory: [
+                    { key: "SELECT", val: "컬럼 선택" },
+                    { key: "FROM", val: "테이블 지정" },
+                    { key: "WHERE 1=1", val: "조건 관리의 기초" }
+                ],
+                question: "2024년 3월 1일 이후에 가입한 서울 지역의 30대 고객 명단을 추출하세요.",
+                schema: ["Customers"],
+                solution: `SELECT *\nFROM Customers\nWHERE\n  1=1\n  AND 지역 = '서울'\n  AND 나이 BETWEEN 30 AND 39\n  AND 가입일 >= '2024-03-01'\n;`,
+                explanation: `1. SELECT * : 모든 컬럼을 한꺼번에 조회할 때 사용합니다.\n\n2. WHERE 다음 줄 1=1 : 실무 쿼리 작성의 정석입니다. 첫 번째 조건을 주석 처리하더라도 문법 오류가 나지 않도록 고정하는 장치입니다.\n\n3. AND 지역 = '서울' : 텍스트 필터링 조건입니다.\n\n4. AND 나이 BETWEEN 30 AND 39 : 특정 범위 내의 숫자를 필터링하는 효율적인 구문입니다.`
+            },
+            {
+                day: 2,
+                title: "데이터 가공과 정렬",
+                theory: [{ key: "CASE WHEN", val: "조건부 데이터 레이블링" }, { key: "ORDER BY", val: "데이터 정렬" }],
+                question: "고객을 청년(30세 미만), 중년(30~49세), 장년(50세 이상)으로 분류하고 나이가 많은 순으로 정렬하세요.",
+                schema: ["Customers"],
+                solution: `SELECT 이름, 나이,\n  CASE WHEN 나이 < 30 THEN '청년'\n       WHEN 나이 < 50 THEN '중년'\n       ELSE '장년' END as 연령그룹\nFROM Customers\nORDER BY 나이 DESC\n;`,
+                explanation: `1. CASE WHEN : 데이터를 특정 비즈니스 로직에 따라 새로운 분류로 바꿀 때 사용합니다.\n\n2. as 연령그룹 : 가상의 컬럼에 분석 목적에 맞는 이름을 붙여줍니다.\n\n3. ORDER BY DESC : 큰 숫자부터 아래로 정렬하여 연장자 우선 리스트를 만듭니다.`
+            },
+            {
+                day: 3,
+                title: "숫자로 말하는 요약",
+                theory: [{ key: "COUNT", val: "개수 세기" }, { key: "SUM", val: "합계 구하기" }, { key: "GROUP BY", val: "묶음 기준" }],
+                question: "지역별 고객 수와 해당 지역의 총 매출액 합계를 계산하세요.",
+                schema: ["Customers", "Usage"],
+                solution: `SELECT \n  C.지역,\n  COUNT(DISTINCT C.고객ID) as 고객수,\n  SUM(U.매출액) as 총매출\nFROM Customers C\nJOIN Usage U ON C.고객ID = U.고객ID\nGROUP BY C.지역\n;`,
+                explanation: `1. JOIN : 고객 기본 테이블과 행동(매출) 테이블을 고객ID로 연결했습니다.\n\n2. COUNT(DISTINCT) : 한 고객의 여러 기록을 한 명으로 정확히 집계하기 위해 중복 제거 기능을 사용했습니다.\n\n3. GROUP BY : '어디를 기준으로 묶을 것인가'를 정의했습니다.`
+            },
+            {
+                day: 4,
+                title: "테이블의 결합 (JOIN)",
+                theory: [{ key: "JOIN", val: "다중 테이블 연계" }],
+                question: "각 고객이 현재 이용 중인 '요금제명' 정보를 매칭해서 보여주세요. (상태가 'Active'인 경우만)",
+                schema: ["Customers", "Subscriptions", "Plans"],
+                solution: `SELECT C.이름, P.요금제명\nFROM Customers C\nJOIN Subscriptions S ON C.고객ID = S.고객ID\nJOIN Plans P ON S.요금제ID = P.요금제ID\nWHERE\n  1=1\n  AND S.상태 = 'Active'\n;`,
+                explanation: `1. 3중 JOIN : 고객(C)에서 가입이력(S)을 거쳐 요금제(P) 정보까지 세 단계를 하나로 연결했습니다.\n\n2. WHERE 1=1 : 필터링의 시작점임을 명시적으로 표현했습니다.`
+            },
+            {
+                day: 5,
+                title: "누락 데이터 처리",
+                theory: [{ key: "LEFT JOIN", val: "기준 데이터 유지" }, { key: "IS NULL", val: "부재 데이터 식별" }],
+                question: "전체 고객 중 요금제 미가입자를 찾아 요금제명을 '미가입'이라고 표시하세요.",
+                schema: ["Customers", "Subscriptions"],
+                solution: `SELECT C.이름, IFNULL(S.요금제ID, '미가입') as 요금제정보\nFROM Customers C\nLEFT JOIN Subscriptions S ON C.고객ID = S.고객ID\nWHERE\n  1=1\n  AND S.가입ID IS NULL\n;`,
+                explanation: `1. LEFT JOIN : 가입하지 않은 고객 정보가 소실되지 않도록 왼쪽 테이블을 기준으로 삼았습니다.\n\n2. IS NULL : 결합 후에도 짝이 없어 데이터가 비어 있는 행이 바로 미가입 고객입니다.`
+            },
+            {
+                day: 6,
+                title: "그룹 필터링 (HAVING)",
+                theory: [{ key: "HAVING", val: "집계 후 결과 조건" }],
+                question: "평균 매출액이 2,000원 이상인 고가치 지역만 추출하세요.",
+                schema: ["Customers", "Usage"],
+                solution: `SELECT 지역, AVG(매출액) as 평균매출\nFROM Customers C\nJOIN Usage U ON C.고객ID = U.고객ID\nGROUP BY 지역\nHAVING\n  1=1\n  AND 평균매출 >= 2000\n;`,
+                explanation: `1. HAVING : 개별 데이터가 아닌, 묶여버린(Grouped) 통계 결과에 대해 필터를 걸 때 사용합니다.\n\n2. 1=1 패턴 : HAVING 절에서도 디버깅을 위해 1=1 습관을 적용하는 것이 실무에서 유리합니다.`
+            },
+            {
+                day: 7,
+                title: "실무용 함수 (날짜 연산)",
+                theory: [{ key: "JULIANDAY", val: "일 단위 차이 계산" }],
+                question: "고객별로 가입한 지 며칠이 지났는지 계산하세요. (기준일: 2024-04-10)",
+                schema: ["Customers"],
+                solution: `SELECT 이름, \n  CAST(JULIANDAY('2024-04-10') - JULIANDAY(가입일) AS INTEGER) as 가입기간\nFROM Customers\n;`,
+                explanation: `1. JULIANDAY : 단순 문자열이 아닌 '시간적 가치'로 데이터를 변환하여 산술 연산을 수행했습니다.\n\n2. CAST : 계산된 결과의 소수점을 없애고 깔끔한 정수로 변환하여 리포트의 가독성을 높였습니다.`
+            },
+            {
+                day: 8,
+                title: "서브쿼리 마스터",
+                theory: [{ key: "IN", val: "집합 내 존재 여부 확인" }],
+                question: "전체 평균 매출액보다 더 많이 쓴 고객의 이름을 찾으세요.",
+                schema: ["Customers", "Usage"],
+                solution: `SELECT 이름\nFROM Customers\nWHERE\n  1=1\n  AND 고객ID IN (\n    SELECT 고객ID \n    FROM Usage \n    WHERE\n      1=1\n      AND 매출액 > (SELECT AVG(매출액) FROM Usage)\n  )\n;`,
+                explanation: `1. 다층 구조 : 안쪽에서 평균을 구하고, 그 위에서 대상자 명단을 만들고, 가장 바깥에서 최종 이름을 조회하는 논리적 분할입니다.\n\n2. 괄호와 줄바꿈 : 서브쿼리가 깊어질수록 줄바꿈을 통해 각 단계의 시작과 끝을 명확히 하는 것이 중요합니다.`
+            },
+            {
+                day: 9,
+                title: "가독성의 끝판왕 (WITH)",
+                theory: [{ key: "CTE", val: "로직의 단계적 정의" }],
+                question: "매출 합계가 3,000원을 초과하면 'VIP', 아니면 '일반' 등급별 인원수를 구하세요.",
+                schema: ["Usage"],
+                solution: `WITH 매출요약 AS (\n  SELECT 고객ID, SUM(매출액) as 총매출 \n  FROM Usage \n  GROUP BY 1\n),\n등급부여 AS (\n  SELECT *, \n    CASE WHEN 총매출 > 3000 THEN 'VIP' ELSE '일반' END as 등급 \n  FROM 매출요약\n)\nSELECT 등급, COUNT(*) as 고객수\nFROM 등급부여\nGROUP BY 1\n;`,
+                explanation: `1. WITH절 : 서브쿼리의 복잡함을 해결하는 현대적인 방식입니다. '매출요약'과 '등급부여'라는 가상의 표를 미리 정의해두고 사용합니다.\n\n2. 가독성 : 위에서 아래로 물 흐르듯 로직이 읽히기 때문에 동료 분석가가 이해하기 가장 쉬운 구조입니다.`
+            },
+            {
+                day: 10,
+                title: "최종 리포트 완성",
+                theory: [{ key: "Synthesis", val: "종합 실무 역량" }],
+                question: "해지(Churned)한 고객들의 지역별/요금제별 해지 건수를 분석하고 많은 순으로 나열하세요.",
+                schema: ["Customers", "Subscriptions", "Plans"],
+                solution: `SELECT \n  C.지역, \n  P.요금제명, \n  COUNT(*) as 해지건수\nFROM Subscriptions S\nJOIN Customers C ON S.고객ID = C.고객ID\nJOIN Plans P ON S.요금제ID = P.요금제ID\nWHERE\n  1=1\n  AND S.상태 = 'Churned'\nGROUP BY 1, 2\nORDER BY 3 DESC\n;`,
+                explanation: `1. 통합 분석 : 실무에서 리포트를 요청받았을 때 작성하는 가장 표준적인 쿼리입니다.\n\n2. 1=1 및 세미콜론 정렬 : 마지막까지 실무 표준 형식을 유지하여 쿼리의 완성도를 높였습니다.`
+            }
+        ];
+
+        function ResultTable({ data, title = "최종 결과 (Execution Result)" }) {
+            if (!data) return null;
+            return (
+                <div className="mt-8 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <h5 className="font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-2 text-sm">
+                        <Icon name="table" className="w-4 h-4 text-emerald-500" /> {title}
+                    </h5>
+                    <div className="overflow-x-auto border border-emerald-100 rounded-xl bg-white shadow-sm">
+                        <table className="w-full text-[11px] text-left border-collapse">
+                            <thead>
+                                <tr className="bg-emerald-50/50 border-b border-emerald-100 text-emerald-700">
+                                    {data.columns.map(c => <th key={c} className="px-4 py-2.5 font-bold uppercase tracking-tight">{c}</th>)}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {data.values.map((row, idx) => (
+                                    <tr key={idx} className="border-b border-emerald-50 last:border-0 hover:bg-emerald-50/30 transition-colors">
+                                        {row.map((val, i) => <td key={i} className="px-4 py-2 font-mono text-slate-600">{val === null ? 'null' : String(val)}</td>)}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            );
+        }
+
+        function App() {
+            const [currentDay, setCurrentDay] = useState(1);
+            const [userQuery, setUserQuery] = useState("");
+            const [db, setDb] = useState(null);
+            const [queryResult, setQueryResult] = useState(null);
+            const [answerResult, setAnswerResult] = useState(null); // 정답 쿼리 실행 결과 보관
+            const [error, setError] = useState(null);
+            const [isCorrect, setIsCorrect] = useState(null);
+            const [showSolution, setShowSolution] = useState(false);
+
+            useEffect(() => {
+                initSqlJs({ locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.wasm` }).then(SQL => {
+                    const database = new SQL.Database();
+                    Object.keys(schemaData).forEach(tableName => {
+                        const table = schemaData[tableName];
+                        const colDefs = table.columns.map((c, i) => `"${c}" ${table.types[i]}`).join(", ");
+                        database.run(`CREATE TABLE ${tableName} (${colDefs})`);
+                        table.samples.forEach(row => {
+                            const placeholders = row.map(() => "?").join(", ");
+                            database.run(`INSERT INTO ${tableName} VALUES (${placeholders})`, row);
+                        });
+                    });
+                    setDb(database);
+                });
+            }, []);
+
+            const runQuery = () => {
+                setError(null);
+                setQueryResult(null);
+                setIsCorrect(null);
+
+                try {
+                    const activeData = curriculum.find(c => c.day === currentDay);
+                    const userRes = db.exec(userQuery);
+                    const answerRes = db.exec(activeData.solution);
+
+                    setAnswerResult(answerRes.length > 0 ? answerRes[0] : null);
+
+                    if (userRes.length > 0) {
+                        setQueryResult(userRes[0]);
+                        const userOutput = JSON.stringify(userRes[0]);
+                        const answerOutput = JSON.stringify(answerRes[0]);
+
+                        if (userOutput === answerOutput) setIsCorrect(true);
+                        else setIsCorrect(false);
+                    } else {
+                        if (answerRes.length === 0) setIsCorrect(true);
+                        else {
+                            setError("결과 데이터가 없습니다. 조건을 확인해 보세요.");
+                            setIsCorrect(false);
+                        }
+                    }
+                } catch (e) {
+                    setError(e.message);
+                    setIsCorrect(false);
+                }
+            };
+
+            const handleDayChange = (d) => {
+                setCurrentDay(d);
+                setUserQuery("");
+                setQueryResult(null);
+                setAnswerResult(null);
+                setError(null);
+                setIsCorrect(null);
+                setShowSolution(false);
+            };
+
+            const activeData = curriculum.find(c => c.day === currentDay) || curriculum[0];
+            const isQueryWritten = userQuery.trim().length >= 10;
+
+            return (
+                <div className="min-h-screen flex flex-col bg-slate-50">
+                    <nav className="bg-white border-b border-slate-200 p-4 sticky top-0 z-50 shadow-sm text-left">
+                        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row justify-between items-center gap-4">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-blue-600 p-2 rounded-xl shadow-lg shadow-blue-200"><Icon name="database" className="w-6 h-6 text-white" /></div>
+                                <div>
+                                    <h1 className="text-xl font-bold text-slate-900 leading-tight">SQL 10일 완성 실무</h1>
+                                    <p className="text-[10px] text-blue-600 font-bold uppercase tracking-widest leading-none">데이터 분석의 첫걸음, SQL 실무 마스터</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-1.5 overflow-x-auto pb-1 custom-scrollbar">
+                                {[1,2,3,4,5,6,7,8,9,10].map(d => (
+                                    <button key={d} onClick={() => handleDayChange(d)} className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${currentDay === d ? "bg-blue-600 text-white shadow-md shadow-blue-200" : "bg-white border border-slate-200 text-slate-400 hover:border-blue-400"}`}>
+                                        Day {d}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </nav>
+
+                    <main className="flex-grow max-w-7xl mx-auto w-full p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                        <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-28 h-fit text-left">
+                            <section className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
+                                <h2 className="text-2xl font-black text-slate-900 mb-2">{activeData.title}</h2>
+                                <div className="mb-6 space-y-2">
+                                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">오늘의 핵심 도구</h4>
+                                    {activeData.theory.map((t, i) => (
+                                        <div key={i} className="flex items-center gap-3 bg-slate-50 p-2.5 rounded-xl border border-slate-100 group">
+                                            <span className="text-[9px] font-black bg-slate-800 text-white px-2 py-0.5 rounded shadow-sm">{t.key}</span>
+                                            <span className="text-xs font-bold text-slate-600">{t.val}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="bg-blue-600 p-6 rounded-3xl text-white shadow-xl relative overflow-hidden mb-4 font-medium">
+                                    <h4 className="text-[10px] font-bold opacity-70 uppercase tracking-widest mb-1 flex items-center gap-1"><Icon name="message-circle" className="w-3 h-3" /> 실무 상황</h4>
+                                    <p className="text-sm leading-snug italic whitespace-pre-wrap">"{activeData.question}"</p>
+                                </div>
+                                <div className="flex gap-3 p-4 bg-slate-900 rounded-2xl border border-slate-800">
+                                    <Icon name="shield-alert" className="w-5 h-5 text-rose-500 shrink-0" />
+                                    <p className="text-[10px] text-slate-400 leading-relaxed font-medium">사내 가이드: 학습은 한글로 진행하나 실무 데이터는 반드시 <strong>영문 컬럼명</strong>을 준수해야 합니다.</p>
+                                </div>
+                            </section>
+                        </div>
+
+                        <div className="lg:col-span-8 space-y-8 h-full text-left">
+                            <div className="bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col border border-slate-700">
+                                <div className="bg-slate-800 px-8 py-4 flex justify-between items-center border-b border-slate-700">
+                                    <div className="flex items-center gap-3 font-mono text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                                        <div className="flex gap-1.5 mr-4"><div className="w-3 h-3 rounded-full bg-rose-500 shadow-sm shadow-rose-900/50"></div><div className="w-3 h-3 rounded-full bg-amber-500 shadow-sm shadow-amber-900/50"></div><div className="w-3 h-3 rounded-full bg-emerald-500 shadow-sm shadow-emerald-900/50"></div></div>
+                                        SQL Editor
+                                    </div>
+                                    <div className="flex items-center gap-2 text-blue-400 opacity-50 font-mono text-[10px]"><Icon name="code" className="w-3 h-3" /> Step. {activeData.day}</div>
+                                </div>
+                                <textarea className="p-8 bg-slate-900 text-blue-100 font-mono text-sm focus:outline-none resize-none leading-relaxed sql-editor w-full h-[300px]" placeholder="-- 왼쪽 상황을 읽고 여기에 쿼리를 직접 작성해 보세요." value={userQuery} onChange={(e) => setUserQuery(e.target.value)}></textarea>
+                                <div className="p-6 bg-slate-800 border-t border-slate-700 flex flex-col sm:flex-row justify-between items-center gap-4">
+                                    <button onClick={() => setShowSolution(!showSolution)} disabled={!isQueryWritten} className={`text-xs font-bold px-4 transition-colors ${isQueryWritten ? "text-slate-400 hover:text-white" : "text-slate-600"}`}>정답 및 해설 보기</button>
+                                    <button onClick={runQuery} disabled={!isQueryWritten} className="bg-blue-600 hover:bg-blue-500 text-white px-10 py-3.5 rounded-2xl font-bold shadow-lg shadow-blue-900/40 active:scale-95 transition-all flex items-center gap-2"><Icon name="play" className="w-4 h-4 fill-current" /> 쿼리 실행 및 채점</button>
+                                </div>
+
+                                {(queryResult || error || isCorrect !== null) && (
+                                    <div className="p-8 bg-slate-950 border-t border-slate-800 animate-in fade-in slide-in-from-top-2 duration-300">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h5 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Your Execution Result</h5>
+                                            {isCorrect === true && <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm"><Icon name="check-circle" className="w-4 h-4" /> 정답입니다! 논리가 완벽합니다.</div>}
+                                            {isCorrect === false && <div className="flex items-center gap-2 text-rose-400 font-bold text-sm"><Icon name="x-circle" className="w-4 h-4" /> 결과 불일치: 조건을 다시 검토하세요.</div>}
+                                        </div>
+                                        {error ? (
+                                            <div className="bg-rose-900/20 border border-rose-500/50 p-4 rounded-xl flex gap-3 items-start font-medium"><Icon name="alert-circle" className="w-5 h-5 text-rose-500 mt-0.5 shrink-0" /><div><p className="text-xs text-rose-200 font-bold uppercase mb-1">Syntax Error</p><p className="text-xs text-rose-300/90 font-mono leading-relaxed">{error}</p></div></div>
+                                        ) : queryResult ? (
+                                            <div className="overflow-x-auto border border-slate-800 rounded-xl custom-scrollbar"><table className="w-full text-[11px] text-left border-collapse"><thead><tr className="bg-slate-900 border-b border-slate-800">{queryResult.columns.map(c => <th key={c} className="px-4 py-3 text-emerald-400 font-mono uppercase tracking-tighter whitespace-nowrap">{c}</th>)}</tr></thead><tbody>{queryResult.values.map((row, idx) => <tr key={idx} className="border-b border-slate-900 last:border-0 hover:bg-white/5 transition-colors">{row.map((val, i) => <td key={i} className="px-4 py-3 text-slate-300 font-mono whitespace-nowrap">{val === null ? 'null' : String(val)}</td>)}</tr>)}</tbody></table></div>
+                                        ) : null}
+                                    </div>
+                                )}
+                            </div>
+
+                            {showSolution && isQueryWritten && (
+                                <div className="bg-white border border-slate-200 p-8 rounded-[2rem] animate-in slide-in-from-top-4 duration-300 shadow-xl text-left">
+                                    <div className="flex items-center justify-between mb-8">
+                                        <h4 className="text-blue-600 font-black flex items-center gap-2 text-lg">
+                                            <Icon name="award" className="w-6 h-6" /> 모범 답안 로직
+                                        </h4>
+                                        <span className="text-[10px] bg-blue-50 text-blue-600 px-3 py-1 rounded-full font-black uppercase tracking-widest">Recommended best practice</span>
+                                    </div>
+                                    
+                                    {/* 1. 모범 답안 */}
+                                    <pre className="bg-slate-900 p-8 rounded-3xl border border-slate-800 text-sm font-mono text-blue-300 mb-10 overflow-x-auto leading-relaxed shadow-inner whitespace-pre">{activeData.solution}</pre>
+                                    
+                                    {/* 2. 상세 논리 해설 */}
+                                    <div className="space-y-4 mb-10">
+                                        <h5 className="font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-2 text-base">
+                                            <Icon name="file-text" className="w-5 h-5 text-blue-500" /> 상세 논리 해설
+                                        </h5>
+                                        <p className="text-[13px] text-slate-600 leading-loose bg-slate-50 p-8 rounded-3xl border border-slate-100 font-medium whitespace-pre-wrap">
+                                            {activeData.explanation}
+                                        </p>
+                                    </div>
+
+                                    {/* 3. 최종 결과 (정답 테이블) */}
+                                    {answerResult && <ResultTable data={answerResult} title="미션 최종 결과 (Expected Result Table)" />}
+                                </div>
+                            )}
+
+                            <div className="space-y-4 pt-4 border-t border-slate-200">
+                                <h3 className="text-lg font-bold text-slate-800 px-1 border-l-4 border-blue-500 pl-3 flex items-center gap-2">현재 테이블 데이터 스키마</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {activeData.schema.map(name => (
+                                        <div key={name} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col transition-all hover:border-blue-200">
+                                            <div className="flex justify-between items-center mb-3 border-b border-slate-50 pb-2">
+                                                <span className="text-xs font-bold text-blue-600 flex items-center gap-1"><Icon name="table" className="w-3 h-3" /> {name}</span>
+                                            </div>
+                                            <div className="overflow-x-auto custom-scrollbar">
+                                                <table className="w-full text-[10px] text-left border-collapse">
+                                                    <thead><tr className="text-slate-400">{schemaData[name].columns.map((c, i) => (<th key={c} className="px-2 py-1.5 font-bold uppercase tracking-tighter whitespace-nowrap">{c} <span className="block text-[8px] text-blue-400 font-mono font-normal">[{schemaData[name].types[i]}]</span></th>))}</tr></thead>
+                                                    <tbody className="mt-2">{schemaData[name].samples.map((row, idx) => (<tr key={idx} className="border-b border-slate-50 last:border-0 hover:bg-slate-50">{row.map((val, i) => (<td key={i} className="px-2 py-2 font-mono text-slate-600 whitespace-nowrap">{val === null ? 'null' : String(val)}</td>))}</tr>))}</tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </main>
+                    <footer className="bg-white border-t border-slate-200 p-8 mt-12 text-slate-300 text-[10px] font-bold uppercase tracking-[0.3em] flex justify-between max-w-7xl mx-auto w-full"><span>SQL Learning Path v3.8</span><span>Logic & Result Layout Unified</span></footer>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
