@@ -11,14 +11,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700;900&display=swap');
-        body { font-family: 'Pretendard', sans-serif; margin: 0; background: #f8fafc; }
-        .sql-editor { font-family: 'Consolas', 'Monaco', monospace !important; }
+        body { font-family: 'Pretendard', sans-serif; margin: 0; background: #f8fafc; color: #1e293b; }
+        .sql-editor { font-family: 'Consolas', 'Monaco', 'Fira Code', monospace !important; }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         button:disabled { cursor: not-allowed; opacity: 0.5; }
-        .animate-fade { animation: fadeIn 0.3s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -57,39 +57,44 @@
                     ["C-005", "정다은", 31, "인천", "2024-03-10"]
                 ]
             },
-            Usage: {
-                columns: ["고객ID", "사용일자", "데이터사용량", "매출액"],
-                types: ["TEXT", "DATE", "REAL", "INTEGER"],
+            Plans: {
+                columns: ["요금제ID", "요금제명", "월정액"],
+                types: ["TEXT", "TEXT", "INTEGER"],
                 samples: [
-                    ["C-001", "2024-04-05", 1.2, 3500],
-                    ["C-002", "2024-04-05", 0.5, 1200],
-                    ["C-004", "2024-04-05", 2.1, 4200],
-                    ["C-005", "2024-04-05", 1.5, 2800]
+                    ["P-01", "5G 무제한 95", 95000],
+                    ["P-02", "LTE 실속 33", 33000],
+                    ["P-03", "IPTV 베이직", 15000]
                 ]
             },
             Subscriptions: {
-                columns: ["고객ID", "요금제ID", "상태"],
-                types: ["TEXT", "TEXT", "TEXT"],
+                columns: ["가입ID", "고객ID", "요금제ID", "상태"],
+                types: ["TEXT", "TEXT", "TEXT", "TEXT"],
                 samples: [
-                    ["C-001", "P-01", "Active"],
-                    ["C-002", "P-02", "Churned"],
-                    ["C-004", "P-01", "Active"],
-                    ["C-005", "P-02", "Active"]
+                    ["S-101", "C-001", "P-01", "Active"],
+                    ["S-102", "C-002", "P-02", "Churned"],
+                    ["S-103", "C-004", "P-01", "Active"]
+                ]
+            },
+            Usage: {
+                columns: ["고객ID", "매출액"],
+                types: ["TEXT", "INTEGER"],
+                samples: [
+                    ["C-001", 3500], ["C-002", 1200], ["C-004", 4200], ["C-005", 2800]
                 ]
             }
         };
 
         const curriculum = [
-            { day: 1, title: "데이터 필터링", tables: ["Customers"], syntax: "SELECT * FROM 테이블 WHERE 조건;", hint: "지역='서울', 나이 30대, 가입일 '2024-03-01' 이후 조건을 AND로 연결하세요.", question: "2024년 3월 1일 이후 가입한 서울 지역의 30대 고객 명단을 추출하세요.", solution: "SELECT * FROM Customers WHERE 1=1 AND 지역 = '서울' AND 나이 BETWEEN 30 AND 39 AND 가입일 >= '2024-03-01';", token: "XN-A1-82" },
-            { day: 2, title: "가공과 정렬", tables: ["Customers"], syntax: "CASE WHEN 조건 THEN 값 ELSE 값 END, ORDER BY 컬럼 DESC;", hint: "30미만 '청년', 50미만 '중년', 나머지는 '장년'입니다.", question: "고객을 연령대별(청년<30, 중년<50, 장년>=50)로 분류하고 나이가 많은 순으로 정렬하세요.", solution: "SELECT 이름, 나이, CASE WHEN 나이 < 30 THEN '청년' WHEN 나이 < 50 THEN '중년' ELSE '장년' END as 연령그룹 FROM Customers ORDER BY 나이 DESC;", token: "XN-B2-19" },
-            { day: 3, title: "통계 요약 (JOIN)", tables: ["Customers", "Usage"], syntax: "JOIN 테이블 ON 조건, GROUP BY 컬럼, COUNT(), SUM();", hint: "고객ID로 연결하고 지역별로 묶으세요.", question: "지역별 고객 수와 해당 지역의 총 매출액 합계를 계산하세요.", solution: "SELECT C.지역, COUNT(DISTINCT C.고객ID) as 고객수, SUM(U.매출액) as 총매출 FROM Customers C JOIN Usage U ON C.고객ID = U.고객ID GROUP BY C.지역;", token: "XN-C3-44" },
-            { day: 4, title: "NULL 처리 및 매칭", tables: ["Customers", "Subscriptions"], syntax: "LEFT JOIN, IFNULL(컬럼, '대체값')", hint: "미가입자 포함은 LEFT JOIN이 필수입니다.", question: "전체 고객의 이름과 요금제ID를 매칭하되, 요금제가 없으면 '미가입'으로 표시하세요.", solution: "SELECT C.이름, IFNULL(S.요금제ID, '미가입') as 요금제정보 FROM Customers C LEFT JOIN Subscriptions S ON C.고객ID = S.고객ID;", token: "XN-D4-07" },
-            { day: 5, title: "범위 필터링 (IN)", tables: ["Customers"], syntax: "WHERE 컬럼 IN (값1, 값2)", hint: "서울과 인천 지역을 동시에 필터링하세요.", question: "서울이나 인천 지역에 거주하는 고객들의 명단을 추출하세요.", solution: "SELECT * FROM Customers WHERE 지역 IN ('서울', '인천');", token: "XN-E5-11" },
-            { day: 6, title: "평균값 집계", tables: ["Customers"], syntax: "AVG(컬럼), ROUND(값, 2)", hint: "나이의 평균을 소수점 둘째자리까지 반올림하세요.", question: "서울 지역 고객들의 평균 나이를 계산하세요. (소수점 둘째자리까지)", solution: "SELECT ROUND(AVG(나이), 2) as 평균나이 FROM Customers WHERE 지역 = '서울';", token: "XN-F6-22" },
-            { day: 7, title: "날짜 계산 기초", tables: ["Customers"], syntax: "JULIANDAY('날짜'), CAST(수치 AS INTEGER)", hint: "가입일부터 현재(2024-04-10)까지 며칠이 지났는지 구하세요.", question: "고객별로 가입한 지 며칠이 지났는지 계산하세요. (기준: 2024-04-10)", solution: "SELECT 이름, CAST(JULIANDAY('2024-04-10') - JULIANDAY(가입일) AS INTEGER) as 경과일 FROM Customers;", token: "XN-G7-33" },
-            { day: 8, title: "문자열 가공", tables: ["Customers"], syntax: "SUBSTR(컬럼, 시작, 길이), || (결합)", hint: "이름의 첫 글자와 고객ID를 결합하세요.", question: "이름의 첫 성씨와 고객ID를 결합하여 '관리명' 컬럼을 만드세요. (예: 김_C-001)", solution: "SELECT SUBSTR(이름, 1, 1) || '_' || 고객ID as 관리명 FROM Customers;", token: "XN-H8-44" },
-            { day: 9, title: "데이터 그룹 분석", tables: ["Customers", "Usage"], syntax: "HAVING 집계조건", hint: "총 매출이 3,000원이 넘는 지역만 뽑으세요.", question: "지역별 총 매출액을 구하고, 그 중 매출 합계가 3,000원을 초과하는 지역만 조회하세요.", solution: "SELECT C.지역, SUM(U.매출액) as 총매출 FROM Customers C JOIN Usage U ON C.고객ID = U.고객ID GROUP BY C.지역 HAVING 총매출 > 3000;", token: "XN-I9-55" },
-            { day: 10, title: "최종 실무 리포트", tables: ["Customers", "Usage"], syntax: "서브쿼리 활용: WHERE 컬럼 IN (SELECT ...)", hint: "전체 평균은 (SELECT AVG(매출액) FROM Usage)로 구합니다.", question: "서울 지역 고객 중 총 매출액이 전체 평균 매출보다 높은 고객의 이름을 출력하세요.", solution: "SELECT 이름 FROM Customers WHERE 1=1 AND 지역 = '서울' AND 고객ID IN (SELECT 고객ID FROM Usage WHERE 매출액 > (SELECT AVG(매출액) FROM Usage));", token: "XN-Z0-99" }
+            { day: 1, title: "데이터 필터링", tables: ["Customers"], syntax: "WHERE 컬럼 = '값', BETWEEN, AND", hint: "지역='서울', 나이 30~39, 가입일 '2024-03-01' 조건을 AND로 연결하세요.", question: "2024년 3월 1일 이후에 가입한 서울 지역의 30대 고객 명단을 추출하세요.", solution: "SELECT *\\nFROM Customers\\nWHERE\\n  1=1\\n  AND 지역 = '서울'\\n  AND 나이 BETWEEN 30 AND 39\\n  AND 가입일 >= '2024-03-01'\\n;" },
+            { day: 2, title: "가공과 정렬", tables: ["Customers"], syntax: "CASE WHEN, ORDER BY DESC", hint: "나이가 30미만이면 '청년', 50미만이면 '중년', 나머지는 '장년'입니다.", question: "고객을 청년(30세 미만), 중년(30~49세), 장년(50세 이상)으로 분류하고 나이가 많은 순으로 정렬하세요.", solution: "SELECT 이름, 나이,\\n  CASE WHEN 나이 < 30 THEN '청년'\\n       WHEN 나이 < 50 THEN '중년'\\n       ELSE '장년' END as 연령그룹\\nFROM Customers\\nORDER BY 나이 DESC\\n;" },
+            { day: 3, title: "통계 요약", tables: ["Customers", "Usage"], syntax: "JOIN, GROUP BY, COUNT(DISTINCT), SUM", hint: "고객ID로 JOIN하고 지역별로 묶어 집계하세요.", question: "지역별 고객 수와 해당 지역의 총 매출액 합계를 계산하세요.", solution: "SELECT \\n  C.지역,\\n  COUNT(DISTINCT C.고객ID) as 고객수,\\n  SUM(U.매출액) as 총매출\\nFROM Customers C\\nJOIN Usage U ON C.고객ID = U.고객ID\\nGROUP BY C.지역\\n;" },
+            { day: 4, title: "다중 테이블 결합", tables: ["Customers", "Subscriptions", "Plans"], syntax: "3-WAY JOIN, WHERE", hint: "상태가 'Active'인 경우만 필터링하세요.", question: "각 고객이 현재 이용 중인 '요금제명' 정보를 매칭해서 보여주세요. (상태가 'Active'인 경우만).", solution: "SELECT C.이름, P.요금제명\\nFROM Customers C\\nJOIN Subscriptions S ON C.고객ID = S.고객ID\\nJOIN Plans P ON S.요금제ID = P.요금제ID\\nWHERE\\n  1=1\\n  AND S.상태 = 'Active'\\n;" },
+            { day: 5, title: "누락 데이터 식별", tables: ["Customers", "Subscriptions"], syntax: "LEFT JOIN, IFNULL, IS NULL", hint: "구독 정보가 없는 사람을 찾아야 하므로 LEFT JOIN이 필수입니다.", question: "전체 고객 중 요금제 미가입자를 찾아 요금제명을 '미가입'이라고 표시하세요.", solution: "SELECT C.이름, IFNULL(S.요금제ID, '미가입') as 요금제정보\\nFROM Customers C\\nLEFT JOIN Subscriptions S ON C.고객ID = S.고객ID\\nWHERE\\n  1=1\\n  AND S.가입ID IS NULL\\n;" },
+            { day: 6, title: "그룹 필터링", tables: ["Customers", "Usage"], syntax: "GROUP BY, HAVING", hint: "집계 결과에 필터를 걸 때는 HAVING을 사용합니다.", question: "평균 매출액이 2,000원 이상인 고가치 지역만 추출하세요.", solution: "SELECT 지역, AVG(매출액) as 평균매출\\nFROM Customers C\\nJOIN Usage U ON C.고객ID = U.고객ID\\nGROUP BY 지역\\nHAVING\\n  1=1\\n  AND 평균매출 >= 2000\\n;" },
+            { day: 7, title: "날짜 차이 계산", tables: ["Customers"], syntax: "JULIANDAY, CAST", hint: "2024-04-10일에서 가입일을 뺀 수치를 정수로 변환하세요.", question: "고객별로 가입한 지 며칠이 지났는지 계산하세요. (기준일: 2024-04-10)", solution: "SELECT 이름, \\n  CAST(JULIANDAY('2024-04-10') - JULIANDAY(가입일) AS INTEGER) as 가입기간\\nFROM Customers\\n;" },
+            { day: 8, title: "서브쿼리 마스터", tables: ["Customers", "Usage"], syntax: "WHERE 컬럼 IN (SELECT ...)", hint: "안쪽 쿼리에서 평균 매출액을 먼저 구하세요.", question: "전체 평균 매출액보다 더 많이 쓴 고객의 이름을 찾으세요.", solution: "SELECT 이름\\nFROM Customers\\nWHERE\\n  1=1\\n  AND 고객ID IN (\\n    SELECT 고객ID \\n    FROM Usage \\n    WHERE\\n      1=1\\n      AND 매출액 > (SELECT AVG(매출액) FROM Usage)\\n  )\\n;" },
+            { day: 9, title: "WITH절 가독성", tables: ["Usage"], syntax: "WITH 별칭 AS (SELECT ...)", hint: "CTE(WITH)를 사용하여 로직을 단계별로 정의하세요.", question: "매출 합계가 3,000원을 초과하면 'VIP', 아니면 '일반' 등급별 인원수를 구하세요.", solution: "WITH 매출요약 AS (\\n  SELECT 고객ID, SUM(매출액) as 총매출 \\n  FROM Usage \\n  GROUP BY 1\\n),\\n등급부여 AS (\\n  SELECT *, \\n    CASE WHEN 총매출 > 3000 THEN 'VIP' ELSE '일반' END as 등급 \\n  FROM 매출요약\\n)\\nSELECT 등급, COUNT(*) as 고객수\\nFROM 등급부여\\nGROUP BY 1\\n;" },
+            { day: 10, title: "최종 실무 리포트", tables: ["Subscriptions", "Customers", "Plans"], syntax: "종합 JOIN & GROUP BY", hint: "Churned 상태인 데이터만 모아 지역과 요금제별로 집계하세요.", question: "해지(Churned)한 고객들의 지역별/요금제별 해지 건수를 분석하고 많은 순으로 나열하세요.", solution: "SELECT \\n  C.지역, \\n  P.요금제명, \\n  COUNT(*) as 해지건수\\nFROM Subscriptions S\\nJOIN Customers C ON S.고객ID = C.고객ID\\nJOIN Plans P ON S.요금제ID = P.요금제ID\\nWHERE\\n  1=1\\n  AND S.상태 = 'Churned'\\nGROUP BY 1, 2\\nORDER BY 3 DESC\\n;" }
         ];
 
         function ResultTable({ data, title }) {
@@ -100,7 +105,7 @@
                     <div className="overflow-x-auto custom-scrollbar">
                         <table className="w-full text-[11px] text-left border-collapse">
                             <thead><tr className="bg-slate-50 border-b">{data.columns.map(c => <th key={c} className="px-3 py-2 font-bold text-slate-500 uppercase whitespace-nowrap">{c}</th>)}</tr></thead>
-                            <tbody>{data.values.map((row, i) => <tr key={i} className="border-b last:border-0 hover:bg-slate-50">{row.map((val, j) => <td key={j} className="px-3 py-2 font-mono text-slate-600 whitespace-nowrap">{String(val)}</td>)}</tr>)}</tbody>
+                            <tbody>{data.values.map((row, i) => <tr key={i} className="border-b last:border-0 hover:bg-slate-50 transition-colors">{row.map((val, j) => <td key={j} className="px-3 py-2 font-mono text-slate-600 whitespace-nowrap">{String(val)}</td>)}</tr>)}</tbody>
                         </table>
                     </div>
                 </div>
@@ -145,7 +150,6 @@
                         setQueryResult(userRes[0]);
                         const normalize = (res) => JSON.stringify([...res[0].values].sort((a,b) => JSON.stringify(a).localeCompare(JSON.stringify(b))));
                         const match = normalize(userRes) === normalize(answerRes);
-                        
                         setIsCorrect(match);
                         if (match && !solvedDays.includes(currentDay)) {
                             const next = [...solvedDays, currentDay];
@@ -191,9 +195,9 @@
                                         <CustomIcon name="message" className="w-5 h-5 text-blue-600" />
                                         <h4 className="font-black text-xs uppercase tracking-widest">실무 상황</h4>
                                     </div>
-                                    <div className="bg-blue-600 p-5 rounded-2xl text-white shadow-xl shadow-blue-200/50 relative overflow-hidden">
+                                    <div className="bg-blue-600 p-6 rounded-2xl text-white shadow-xl shadow-blue-200/50 relative overflow-hidden border-2 border-blue-400">
                                         <CustomIcon name="message" className="absolute -bottom-2 -right-2 w-16 h-16 text-blue-500 opacity-20" />
-                                        <p className="text-[15px] leading-relaxed italic font-medium relative z-10">"{active.question}"</p>
+                                        <p className="text-[16px] leading-relaxed italic font-bold relative z-10">"{active.question}"</p>
                                     </div>
                                 </div>
 
@@ -210,6 +214,7 @@
                         </div>
 
                         <div className="lg:col-span-8 space-y-6 flex flex-col">
+                            {/* Data Schema View: Positioned Above SQL Editor */}
                             <div className="space-y-3 text-left animate-fade">
                                 <div className="flex items-center gap-2 px-1">
                                     <CustomIcon name="layout" className="w-4 h-4 text-slate-400" />
@@ -234,16 +239,16 @@
 
                             <div className="bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col border border-slate-700">
                                 <div className="bg-slate-800 px-8 py-4 border-b border-slate-700 flex justify-between items-center"><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">SQL Editor</span></div>
-                                <textarea className="p-8 bg-slate-900 text-blue-100 font-mono text-sm focus:outline-none resize-none h-[300px] leading-relaxed sql-editor" placeholder="-- 상단의 테이블 스키마를 참고하여 쿼리를 작성하세요." value={userQuery} onChange={e => setUserQuery(e.target.value)}></textarea>
+                                <textarea className="p-8 bg-slate-900 text-blue-100 font-mono text-sm focus:outline-none resize-none h-[300px] leading-relaxed sql-editor" placeholder="-- 상단의 스키마를 참고하여 미션을 해결하는 쿼리를 작성하세요." value={userQuery} onChange={e => setUserQuery(e.target.value)}></textarea>
                                 <div className="p-6 bg-slate-800 border-t border-slate-700 flex justify-end">
-                                    <button onClick={runQuery} className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-3 rounded-2xl font-black text-sm shadow-xl active:scale-95 transition-all flex items-center gap-2">
+                                    <button onClick={runQuery} className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-3.5 rounded-2xl font-black text-sm shadow-xl active:scale-95 transition-all flex items-center gap-2">
                                         <CustomIcon name="play" className="w-4 h-4 fill-current" /> RUN MISSION
                                     </button>
                                 </div>
                                 {isCorrect !== null && (
                                     <div className={"p-8 border-t border-slate-800 " + (isCorrect ? "bg-emerald-950/20" : "bg-rose-950/20")}>
                                         <div className="flex items-center justify-between mb-4 text-sm font-black tracking-tight">
-                                            {isCorrect ? <div className="text-emerald-400 flex items-center gap-2"><CustomIcon name="award" className="w-5 h-5" /> SUCCESS! 인증코드: {active.token}</div> : <div className="text-rose-400 flex items-center gap-2"><CustomIcon name="info" className="w-5 h-5" /> LOGIC ERROR: 결과가 정답과 다릅니다. 힌트를 확인하세요!</div>}
+                                            {isCorrect ? <div className="text-emerald-400 flex items-center gap-2 animate-bounce"><CustomIcon name="award" className="w-5 h-5" /> SUCCESS! 인증코드: {curriculum[currentDay-1]?.token || 'SQL-OK'}</div> : <div className="text-rose-400 flex items-center gap-2"><CustomIcon name="info" className="w-5 h-5" /> LOGIC ERROR: 결과가 정답과 다릅니다. 힌트를 확인하세요!</div>}
                                         </div>
                                         {queryResult && <ResultTable data={queryResult} title="Your Execution Result" />}
                                     </div>
@@ -251,7 +256,7 @@
                             </div>
                         </div>
                     </main>
-                    <footer className="bg-white border-t p-8 text-slate-300 text-[10px] font-black uppercase tracking-[0.4em] text-center mt-10">SQL Mastery Course v3.5 - Visual UI Updated</footer>
+                    <footer className="bg-white border-t p-8 text-slate-300 text-[10px] font-black uppercase tracking-[0.4em] text-center mt-10">SQL Mastery Course v3.6 - Curriculum Updated</footer>
                 </div>
             );
         }
