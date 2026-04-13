@@ -88,16 +88,78 @@
         };
 
         const curriculum = [
-            { day: 1, title: "데이터 필터링", tables: ["Customers"], syntax: "SELECT * FROM 테이블 WHERE 조건;", hint: "city='서울', age 30~39, join_date '2024-03-01' 조건을 AND로 연결하세요.", question: "2024년 3월 1일 이후에 가입한 서울 지역의 30대 고객 명단을 추출하세요.\n(출력 컬럼: 모든 컬럼)", solution: `SELECT *\nFROM Customers\nWHERE\n  1=1\n  AND city = '서울'\n  AND age BETWEEN 30 AND 39\n  AND join_date >= '2024-03-01'\n;`, token: "XN-A1-82" },
-            { day: 2, title: "가공과 정렬", tables: ["Customers"], syntax: "CASE WHEN, ORDER BY DESC", hint: "나이가 30미만이면 '청년', 50미만이면 '중년', 나머지는 '장년'입니다.", question: "고객을 청년(30세 미만), 중년(30~49세), 장년(50세 이상)으로 분류하고 나이가 많은 순으로 정렬하세요.\n(출력 컬럼: name, age, age_group)", solution: `SELECT name, age,\n  CASE WHEN age < 30 THEN '청년'\n       WHEN age < 50 THEN '중년'\n       ELSE '장년' END as age_group\nFROM Customers\nORDER BY age DESC\n;`, token: "XN-B2-19" },
-            { day: 3, title: "통계 요약", tables: ["Customers", "Usage"], syntax: "JOIN, GROUP BY, COUNT(DISTINCT), SUM", hint: "id로 JOIN하고 city별로 묶어 집계하세요.", question: "지역별 고객 수와 해당 지역의 총 매출액 합계를 계산하세요.\n(출력 컬럼: city, user_cnt, total_sales)", solution: `SELECT \n  C.city,\n  COUNT(DISTINCT C.id) as user_cnt,\n  SUM(U.sales) as total_sales\nFROM Customers C\nJOIN Usage U ON C.id = U.id\nGROUP BY C.city\n;`, token: "XN-C3-44" },
-            { day: 4, title: "다중 테이블 결합", tables: ["Customers", "Subscriptions", "Plans"], syntax: "3-WAY JOIN, WHERE", hint: "status가 'Active'인 경우만 필터링하세요.", question: "각 고객이 현재 이용 중인 '요금제명' 정보를 매칭해서 보여주세요. (상태가 'Active'인 경우만).\n(출력 컬럼: name, plan_name)", solution: `SELECT C.name, P.plan_name\nFROM Customers C\nJOIN Subscriptions S ON C.id = S.id\nJOIN Plans P ON S.plan_id = P.plan_id\nWHERE\n  1=1\n  AND S.status = 'Active'\n;`, token: "XN-D4-50" },
-            { day: 5, title: "누락 데이터 식별", tables: ["Customers", "Subscriptions"], syntax: "LEFT JOIN, IFNULL, IS NULL", hint: "구독 정보가 없는 사람을 찾아야 하므로 LEFT JOIN이 필수입니다.", question: "전체 고객 중 요금제 미가입자를 찾아 요금제ID를 '미가입'이라고 표시하세요.\n(출력 컬럼: name, sub_info)", solution: `SELECT C.name, IFNULL(S.plan_id, '미가입') as sub_info\nFROM Customers C\nLEFT JOIN Subscriptions S ON C.id = S.id\nWHERE\n  1=1\n  AND S.sub_id IS NULL\n;`, token: "XN-E5-07" },
-            { day: 6, title: "그룹 필터링", tables: ["Customers", "Usage"], syntax: "GROUP BY, HAVING", hint: "집계 결과에 필터를 걸 때는 HAVING을 사용합니다.", question: "평균 매출액이 2,000원 이상인 고가치 지역만 추출하세요.\n(출력 컬럼: city, avg_sales)", solution: `SELECT city, AVG(sales) as avg_sales\nFROM Customers C\nJOIN Usage U ON C.id = U.id\nGROUP BY city\nHAVING\n  1=1\n  AND avg_sales >= 2000\n;`, token: "XN-F6-12" },
-            { day: 7, title: "날짜 차이 계산", tables: ["Customers"], syntax: "JULIANDAY, CAST", hint: "2024-04-10일에서 join_date를 뺀 수치를 정수로 변환하세요.", question: "고객별로 가입한 지 며칠이 지났는지 계산하세요. (기준일: 2024-04-10)\n(출력 컬럼: name, tenure_days)", solution: `SELECT name, \n  CAST(JULIANDAY('2024-04-10') - JULIANDAY(join_date) AS INTEGER) as tenure_days\nFROM Customers\n;`, token: "XN-G7-28" },
-            { day: 8, title: "서브쿼리 마스터", tables: ["Customers", "Usage"], syntax: "WHERE 컬럼 IN (SELECT ...)", hint: "안쪽 쿼리에서 평균 매출액을 먼저 구하세요.", question: "전체 평균 매출액보다 더 많이 쓴 고객의 이름을 찾으세요.\n(출력 컬럼: name)", solution: `SELECT name\nFROM Customers\nWHERE\n  1=1\n  AND id IN (\n    SELECT id \n    FROM Usage \n    WHERE\n      1=1\n      AND sales > (SELECT AVG(sales) FROM Usage)\n  )\n;`, token: "XN-H8-90" },
-            { day: 9, title: "WITH절 가독성", tables: ["Usage"], syntax: "WITH 별칭 AS (SELECT ...)", hint: "CTE(WITH)를 사용하여 로직을 단계별로 정의하세요.", question: "매출 합계가 3,000원을 초과하면 'VIP', 아니면 '일반' 등급별 인원수를 구하세요.\n(출력 컬럼: grade, user_cnt)", solution: `WITH sales_summary AS (\n  SELECT id, SUM(sales) as total_sales \n  FROM Usage \n  GROUP BY 1\n),\ngrade_assignment AS (\n  SELECT *, \n    CASE WHEN total_sales > 3000 THEN 'VIP' ELSE '일반' END as grade \n  FROM sales_summary\n)\nSELECT grade, COUNT(*) as user_cnt\nFROM grade_assignment\nGROUP BY 1\n;`, token: "XN-I9-33" },
-            { day: 10, title: "최종 실무 리포트", tables: ["Subscriptions", "Customers", "Plans"], syntax: "종합 JOIN & GROUP BY", hint: "Churned 상태인 데이터만 모아 지역과 요금제별로 집계하세요.", question: "해지(Churned)한 고객들의 지역별/요금제별 해지 건수를 분석하고 많은 순으로 나열하세요.\n(출력 컬럼: city, plan_name, churn_cnt)", solution: `SELECT \n  C.city, \n  P.plan_name, \n  COUNT(*) as churn_cnt\nFROM Subscriptions S\nJOIN Customers C ON S.id = C.id\nJOIN Plans P ON S.plan_id = P.plan_id\nWHERE\n  1=1\n  AND S.status = 'Churned'\nGROUP BY 1, 2\nORDER BY 3 DESC\n;`, token: "XN-Z0-99" }
+            { 
+                day: 1, title: "데이터 필터링", tables: ["Customers"], 
+                syntax: "SELECT * FROM 테이블 WHERE 조건;", 
+                hint: "city='서울', age 30~39, join_date '2024-03-01' 조건을 AND로 연결하세요.", 
+                question: `2024년 3월 1일 이후에 가입한 서울 지역의 30대 고객 명단을 추출하세요.\n(출력 컬럼: 모든 컬럼)`, 
+                solution: `SELECT *\nFROM Customers\nWHERE\n  1=1\n  AND city = '서울'\n  AND age BETWEEN 30 AND 39\n  AND join_date >= '2024-03-01'\n;`, 
+                token: "XN-01-SUCC" 
+            },
+            { 
+                day: 2, title: "가공과 정렬", tables: ["Customers"], 
+                syntax: "CASE WHEN, ORDER BY DESC", 
+                hint: "나이가 30미만이면 '청년', 50미만이면 '중년', 나머지는 '장년'입니다.", 
+                question: `고객을 청년(30세 미만), 중년(30~49세), 장년(50세 이상)으로 분류하고 나이가 많은 순으로 정렬하세요.\n(출력 컬럼: name, age, age_group)`, 
+                solution: `SELECT name, age,\n  CASE WHEN age < 30 THEN '청년'\n       WHEN age < 50 THEN '중년'\n       ELSE '장년' END as age_group\nFROM Customers\nORDER BY age DESC\n;`, 
+                token: "XN-02-SUCC" 
+            },
+            { 
+                day: 3, title: "데이터 형 변환", tables: ["Customers"], 
+                syntax: "CAST(컬럼 AS INTEGER), STRFTIME()", 
+                hint: "STRFTIME('%Y', join_date)를 사용하여 연도를 뽑고, 이를 INTEGER로 변환하세요.", 
+                question: `고객별 이름과 가입 연도를 추출하되, 가입 연도는 숫자(INTEGER)형태로 변환하세요.\n(출력 컬럼: name, join_year)`, 
+                solution: `SELECT name, \n  CAST(STRFTIME('%Y', join_date) AS INTEGER) as join_year\nFROM Customers\n;`, 
+                token: "XN-03-SUCC" 
+            },
+            { 
+                day: 4, title: "통계 요약", tables: ["Customers", "Usage"], 
+                syntax: "JOIN, GROUP BY, COUNT(DISTINCT), SUM", 
+                hint: "id로 JOIN하고 city별로 묶어 집계하세요.", 
+                question: `지역별 고객 수와 해당 지역의 총 매출액 합계를 계산하세요.\n(출력 컬럼: city, user_cnt, total_sales)`, 
+                solution: `SELECT \n  C.city,\n  COUNT(DISTINCT C.id) as user_cnt,\n  SUM(U.sales) as total_sales\nFROM Customers C\nJOIN Usage U ON C.id = U.id\nGROUP BY C.city\n;`, 
+                token: "XN-04-SUCC" 
+            },
+            { 
+                day: 5, title: "NULL 데이터 처리", tables: ["Customers", "Subscriptions"], 
+                syntax: "LEFT JOIN, CASE WHEN ... IS NULL", 
+                hint: "LEFT JOIN 후, plan_id가 NULL인 경우 'No Plan'이라고 표시하도록 CASE WHEN을 작성하세요.", 
+                question: `전체 고객의 이름과 요금제ID를 매칭하되, 요금제가 없는 미가입자는 'No Plan'이라고 표시하세요.\n(출력 컬럼: name, sub_info)`, 
+                solution: `SELECT C.name, \n  CASE WHEN S.plan_id IS NULL THEN 'No Plan' \n       ELSE S.plan_id END as sub_info\nFROM Customers C\nLEFT JOIN Subscriptions S ON C.id = S.id\n;`, 
+                token: "XN-05-SUCC" 
+            },
+            { 
+                day: 6, title: "그룹 필터링", tables: ["Customers", "Usage"], 
+                syntax: "GROUP BY, HAVING", 
+                hint: "AVG(sales) 결과에 필터를 걸기 위해 HAVING을 사용하세요.", 
+                question: `평균 매출액이 2,000원 이상인 고가치 지역만 추출하세요.\n(출력 컬럼: city, avg_sales)`, 
+                solution: `SELECT city, AVG(sales) as avg_sales\nFROM Customers C\nJOIN Usage U ON C.id = U.id\nGROUP BY city\nHAVING avg_sales >= 2000\n;`, 
+                token: "XN-06-SUCC" 
+            },
+            { 
+                day: 7, title: "서브쿼리 기초", tables: ["Customers", "Usage"], 
+                syntax: "SELECT ... FROM 테이블 JOIN (SELECT ...) ON ...", 
+                hint: "Usage 테이블에서 sales가 3000을 초과하는 데이터를 서브쿼리로 만들고 메인 테이블과 JOIN하세요.", 
+                question: `매출액(sales)이 3,000원을 초과한 고객들의 이름(name)과 해당 매출액(sales)을 추출하세요. (서브쿼리 활용)\n(출력 컬럼: name, sales)`, 
+                solution: `SELECT name, sales\nFROM Customers C\nJOIN (\n  SELECT id, sales \n  FROM Usage \n  WHERE sales > 3000\n) U ON C.id = U.id\n;`, 
+                token: "XN-07-SUCC" 
+            },
+            { 
+                day: 8, title: "WITH절 활용", tables: ["Usage", "Customers"], 
+                syntax: "WITH 별칭 AS (SELECT ...)", 
+                hint: "Day 7의 서브쿼리 부분을 WITH절로 정의하여 가독성을 높여보세요.", 
+                question: `Day 07과 동일한 미션입니다. 매출액이 3,000원을 초과한 고객의 이름과 매출액을 이번에는 WITH 구문을 사용하여 추출하세요.\n(출력 컬럼: name, sales)`, 
+                solution: `WITH high_sales AS (\n  SELECT id, sales \n  FROM Usage \n  WHERE sales > 3000\n)\nSELECT C.name, H.sales\nFROM Customers C\nJOIN high_sales H ON C.id = H.id\n;`, 
+                token: "XN-08-SUCC" 
+            },
+            { 
+                day: 9, title: "최종 실무 리포트", tables: ["Subscriptions", "Customers", "Plans"], 
+                syntax: "종합 JOIN & GROUP BY", 
+                hint: "Churned 상태인 데이터만 모아 지역과 요금제별로 집계하세요.", 
+                question: `해지(Churned)한 고객들의 지역별/요금제별 해지 건수를 분석하고 많은 순으로 나열하세요.\n(출력 컬럼: city, plan_name, churn_cnt)`, 
+                solution: `SELECT \n  C.city, \n  P.plan_name, \n  COUNT(*) as churn_cnt\nFROM Subscriptions S\nJOIN Customers C ON S.id = C.id\nJOIN Plans P ON S.plan_id = P.plan_id\nWHERE\n  1=1\n  AND S.status = 'Churned'\nGROUP BY 1, 2\nORDER BY 3 DESC\n;`, 
+                token: "XN-09-SUCC" 
+            }
         ];
 
         function ResultTable({ data, title }) {
@@ -108,7 +170,7 @@
                     <div className="overflow-x-auto custom-scrollbar">
                         <table className="w-full text-[11px] text-left border-collapse">
                             <thead><tr className="bg-slate-50 border-b">{data.columns.map(c => <th key={c} className="px-3 py-2 font-bold text-slate-500 uppercase whitespace-nowrap">{c}</th>)}</tr></thead>
-                            <tbody>{data.values.map((row, i) => <tr key={i} className="border-b last:border-0 hover:bg-slate-50 transition-colors">{row.map((val, j) => <td key={j} className="px-3 py-2 font-mono text-slate-600 whitespace-nowrap">{String(val)}</td>)}</tr>)}</tbody>
+                            <tbody>{data.values.map((row, i) => <tr key={i} className="border-b last:border-0 hover:bg-slate-50 transition-colors">{row.map((val, j) => <td key={j} className="px-3 py-2 font-mono text-slate-600 whitespace-nowrap">{val === null ? 'null' : String(val)}</td>)}</tr>)}</tbody>
                         </table>
                     </div>
                 </div>
@@ -159,20 +221,33 @@
                     
                     if (userRes.length > 0) {
                         setQueryResult(userRes[0]);
-                        const uCols = userRes[0].columns.length;
-                        const aCols = answerRes[0].columns.length;
-                        const uRows = userRes[0].values.length;
-                        const aRows = answerRes[0].values.length;
+                        const uCols = userRes[0].columns;
+                        const aCols = answerRes[0].columns;
+                        const uValues = userRes[0].values;
+                        const aRows = answerRes[0].values;
 
-                        if (uCols !== aCols) {
-                            setErrorReason(`정보(컬럼) 선택이 잘못되었습니다. 정답은 ${aCols}개의 열을 보여주어야 하지만, 현재 ${uCols}개의 열만 출력되었습니다. 지문의 '(출력 컬럼: ...)' 내용을 다시 확인해 주세요.`);
+                        if (uCols.length !== aCols.length) {
+                            setErrorReason(`정보(컬럼) 선택이 잘못되었습니다. 정답은 ${aCols.length}개의 열을 보여주어야 하지만, 현재 ${uCols.length}개의 열만 출력되었습니다. 지문의 '(출력 컬럼: ...)' 내용을 다시 확인해 주세요.`);
                             setIsCorrect(false);
-                        } else if (uRows !== aRows) {
-                            setErrorReason(`데이터 건수(행)가 정답과 다릅니다. 필터(WHERE) 조건을 확인해 주세요. 정답은 ${aRows}건이 나와야 하지만, 현재 ${uRows}건이 출력되었습니다.`);
+                        } else if (uValues.length !== aRows.length) {
+                            setErrorReason(`데이터 건수(행)가 정답과 다릅니다. 필터(WHERE) 조건을 확인해 주세요. 정답은 ${aRows.length}건이 나와야 하지만, 현재 ${uValues.length}건이 출력되었습니다.`);
                             setIsCorrect(false);
                         } else {
-                            const normalize = (res) => JSON.stringify([...res[0].values].sort((a,b) => JSON.stringify(a).localeCompare(JSON.stringify(b))));
-                            const match = normalize(userRes) === normalize(answerRes);
+                            const userRows = uValues.map(row => {
+                                const obj = {};
+                                uCols.forEach((col, i) => obj[col.toLowerCase()] = row[i]);
+                                return obj;
+                            });
+                            const answerRows = aRows.map(row => {
+                                const obj = {};
+                                aCols.forEach((col, i) => obj[col.toLowerCase()] = row[i]);
+                                return obj;
+                            });
+
+                            const normalizeRow = (row) => JSON.stringify(Object.keys(row).sort().reduce((acc, key) => ({...acc, [key]: row[key]}), {}));
+                            const sortLogic = (a, b) => normalizeRow(a).localeCompare(normalizeRow(b));
+                            const match = JSON.stringify(userRows.sort(sortLogic)) === JSON.stringify(answerRows.sort(sortLogic));
+
                             if (match) {
                                 setIsCorrect(true);
                                 if (!solvedDays.includes(currentDay)) {
@@ -198,7 +273,7 @@
             const active = curriculum.find(c => c.day === currentDay) || curriculum[0];
 
             return (
-                <div className="min-h-screen flex flex-col bg-slate-50">
+                <div className="min-h-screen flex flex-col bg-slate-50 text-left">
                     <div className="flex-grow">
                         <header className="max-w-7xl mx-auto p-4 md:p-10 pb-4 flex flex-col md:flex-row justify-between items-center gap-8 border-b border-slate-200">
                             <div className="flex items-center gap-4 text-left shrink-0">
@@ -219,7 +294,6 @@
 
                         <main className="max-w-7xl mx-auto p-4 md:p-10 grid grid-cols-1 lg:grid-cols-12 gap-10 pb-32">
                             <div className="lg:col-span-4 space-y-6">
-                                {/* Mission Info Card */}
                                 <section className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm text-left animate-fade">
                                     <div className="flex justify-between items-start mb-2">
                                         <h2 className="text-sm font-black text-blue-600 uppercase tracking-widest">MISSION {active.day}</h2>
@@ -228,17 +302,17 @@
                                     <h3 className="text-xl font-bold text-slate-900 mb-6 tracking-tight">{active.title}</h3>
                                     
                                     <div className="space-y-4 mb-8">
-                                        <div className="flex items-center gap-2 text-slate-900">
+                                        <div className="flex items-center gap-2 text-slate-900 text-left">
                                             <CustomIcon name="message" className="w-5 h-5 text-blue-600" />
                                             <h4 className="font-black text-xs uppercase tracking-widest">실무 상황</h4>
                                         </div>
-                                        <div className="bg-blue-600 p-6 rounded-2xl text-white shadow-xl shadow-blue-200/50 relative overflow-hidden border-2 border-blue-400 font-bold italic leading-relaxed text-[15px]">
+                                        <div className="bg-blue-600 p-6 rounded-2xl text-white shadow-xl shadow-blue-200/50 relative overflow-hidden border-2 border-blue-400 font-bold italic leading-relaxed text-[15px] text-left">
                                             <CustomIcon name="message" className="absolute -bottom-2 -right-2 w-16 h-16 text-blue-500 opacity-20" />
                                             <p className="relative z-10 whitespace-pre-wrap">"{active.question}"</p>
                                         </div>
                                     </div>
 
-                                    <div className="bg-slate-50 p-4 rounded-xl mb-6 border border-slate-100">
+                                    <div className="bg-slate-50 p-4 rounded-xl mb-6 border border-slate-100 text-left">
                                         <h4 className="text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">SQL 문법 가이드</h4>
                                         <p className="text-[11px] font-mono text-blue-800 leading-relaxed font-bold">{active.syntax}</p>
                                     </div>
@@ -246,11 +320,10 @@
                                     <button onClick={() => setShowHint(!showHint)} className="text-[10px] font-black text-slate-400 hover:text-blue-600 flex items-center gap-1 uppercase tracking-tighter transition-colors w-full justify-start">
                                         <CustomIcon name="info" className="w-3 h-3" /> {showHint ? "힌트 닫기" : "힌트 보기"}
                                     </button>
-                                    {showHint && <p className="mt-3 p-4 bg-amber-50 text-amber-700 text-[11px] rounded-xl border border-amber-100 animate-fade leading-relaxed">💡 {active.hint}</p>}
+                                    {showHint && <p className="mt-3 p-4 bg-amber-50 text-amber-700 text-[11px] rounded-xl border border-amber-100 animate-fade leading-relaxed text-left">💡 {active.hint}</p>}
                                 </section>
 
-                                {/* Separate Answer Reference Box */}
-                                <section className="bg-emerald-900 rounded-3xl overflow-hidden shadow-2xl animate-fade">
+                                <section className="bg-emerald-900 rounded-3xl overflow-hidden shadow-2xl animate-fade text-left">
                                     <div className="px-5 py-3 bg-emerald-800 flex justify-between items-center border-b border-emerald-700">
                                         <div className="flex items-center gap-2">
                                             <CustomIcon name="eye" className="w-4 h-4 text-emerald-300" />
@@ -281,7 +354,6 @@
                             </div>
 
                             <div className="lg:col-span-8 space-y-6 flex flex-col">
-                                {/* Table Schema Section */}
                                 <div className="space-y-3 text-left animate-fade">
                                     <div className="flex items-center gap-2 px-1">
                                         <CustomIcon name="layout" className="w-4 h-4 text-slate-400" />
@@ -289,7 +361,7 @@
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         {active.tables.map(name => (
-                                            <div key={name} className="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm hover:border-blue-200 transition-all">
+                                            <div key={name} className="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm hover:border-blue-200 transition-all text-left">
                                                 <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest block mb-1.5 flex items-center gap-1">
                                                     <CustomIcon name="database" className="w-3 h-3" /> {name}
                                                 </span>
@@ -304,8 +376,7 @@
                                     </div>
                                 </div>
 
-                                {/* SQL Editor Section */}
-                                <div className="bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col border border-slate-700">
+                                <div className="bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col border border-slate-700 text-left">
                                     <div className="bg-slate-800 px-8 py-4 border-b border-slate-700 flex justify-between items-center"><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">SQL Editor</span></div>
                                     <textarea className="p-8 bg-slate-900 text-blue-100 font-mono text-sm focus:outline-none resize-none h-[300px] leading-relaxed sql-editor" placeholder="-- 직접 쿼리를 작성하거나 왼쪽 정답을 참고하세요." value={userQuery} onChange={e => setUserQuery(e.target.value)}></textarea>
                                     <div className="p-6 bg-slate-800 border-t border-slate-700 flex justify-end">
@@ -314,7 +385,7 @@
                                         </button>
                                     </div>
                                     {isCorrect !== null && (
-                                        <div className={"p-8 border-t border-slate-800 " + (isCorrect ? "bg-emerald-950/20" : "bg-rose-950/20")}>
+                                        <div className={"p-8 border-t border-slate-800 text-left " + (isCorrect ? "bg-emerald-950/20" : "bg-rose-950/20")}>
                                             <div className="flex items-center justify-between mb-4 text-sm font-black tracking-tight">
                                                 {isCorrect ? 
                                                     <div className="text-emerald-400 flex items-center gap-2 animate-bounce"><CustomIcon name="award" className="w-5 h-5" /> SUCCESS! 인증코드: {active.token}</div> : 
@@ -327,7 +398,7 @@
                                                     </div>
                                                 }
                                             </div>
-                                            {queryResult && <ResultTable data={queryResult} title="Your Execution Result" />}
+                                            {queryResult && <ResultTable data={queryResult} title="Your Execution Output" />}
                                         </div>
                                     )}
                                 </div>
@@ -335,7 +406,7 @@
                         </main>
                     </div>
                     <footer className="bg-white border-t p-8 text-slate-300 text-[10px] font-black uppercase tracking-[0.4em] text-center shrink-0">
-                        SQL Mastery Course v4.5 - English Columns & Result View Enhanced
+                        SQL Mastery Course v4.8 - Sequential Days & Logic Updated
                     </footer>
                 </div>
             );
