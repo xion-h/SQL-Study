@@ -37,7 +37,9 @@
                 layout: <React.Fragment><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></React.Fragment>,
                 play: <polygon points="5 3 19 12 5 21 5 3" />,
                 message: <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />,
-                eye: <React.Fragment><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></React.Fragment>
+                eye: <React.Fragment><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></React.Fragment>,
+                alert: <React.Fragment><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></React.Fragment>,
+                copy: <React.Fragment><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></React.Fragment>
             };
             return (
                 <svg className={className} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -86,16 +88,16 @@
         };
 
         const curriculum = [
-            { day: 1, title: "데이터 필터링", tables: ["Customers"], syntax: "WHERE 컬럼 = '값', BETWEEN, AND", hint: "지역='서울', 나이 30~39, 가입일 '2024-03-01' 조건을 AND로 연결하세요.", question: "2024년 3월 1일 이후에 가입한 서울 지역의 30대 고객 명단을 추출하세요.", solution: "SELECT *\\nFROM Customers\\nWHERE\\n  1=1\\n  AND 지역 = '서울'\\n  AND 나이 BETWEEN 30 AND 39\\n  AND 가입일 >= '2024-03-01'\\n;", token: "XN-A1-82" },
-            { day: 2, title: "가공과 정렬", tables: ["Customers"], syntax: "CASE WHEN, ORDER BY DESC", hint: "나이가 30미만이면 '청년', 50미만이면 '중년', 나머지는 '장년'입니다.", question: "고객을 청년(30세 미만), 중년(30~49세), 장년(50세 이상)으로 분류하고 나이가 많은 순으로 정렬하세요.", solution: "SELECT 이름, 나이,\\n  CASE WHEN 나이 < 30 THEN '청년'\\n       WHEN 나이 < 50 THEN '중년'\\n       ELSE '장년' END as 연령그룹\\nFROM Customers\\nORDER BY 나이 DESC\\n;", token: "XN-B2-19" },
-            { day: 3, title: "통계 요약", tables: ["Customers", "Usage"], syntax: "JOIN, GROUP BY, COUNT(DISTINCT), SUM", hint: "고객ID로 JOIN하고 지역별로 묶어 집계하세요.", question: "지역별 고객 수와 해당 지역의 총 매출액 합계를 계산하세요.", solution: "SELECT \\n  C.지역,\\n  COUNT(DISTINCT C.고객ID) as 고객수,\\n  SUM(U.매출액) as 총매출\\nFROM Customers C\\nJOIN Usage U ON C.고객ID = U.고객ID\\nGROUP BY C.지역\\n;", token: "XN-C3-44" },
-            { day: 4, title: "다중 테이블 결합", tables: ["Customers", "Subscriptions", "Plans"], syntax: "3-WAY JOIN, WHERE", hint: "상태가 'Active'인 경우만 필터링하세요.", question: "각 고객이 현재 이용 중인 '요금제명' 정보를 매칭해서 보여주세요. (상태가 'Active'인 경우만).", solution: "SELECT C.이름, P.요금제명\\nFROM Customers C\\nJOIN Subscriptions S ON C.고객ID = S.고객ID\\nJOIN Plans P ON S.요금제ID = P.요금제ID\\nWHERE\\n  1=1\\n  AND S.상태 = 'Active'\\n;", token: "XN-D4-50" },
-            { day: 5, title: "누락 데이터 식별", tables: ["Customers", "Subscriptions"], syntax: "LEFT JOIN, IFNULL, IS NULL", hint: "구독 정보가 없는 사람을 찾아야 하므로 LEFT JOIN이 필수입니다.", question: "전체 고객 중 요금제 미가입자를 찾아 요금제명을 '미가입'이라고 표시하세요.", solution: "SELECT C.이름, IFNULL(S.요금제ID, '미가입') as 요금제정보\\nFROM Customers C\\nLEFT JOIN Subscriptions S ON C.고객ID = S.고객ID\\nWHERE\\n  1=1\\n  AND S.가입ID IS NULL\\n;", token: "XN-E5-07" },
-            { day: 6, title: "그룹 필터링", tables: ["Customers", "Usage"], syntax: "GROUP BY, HAVING", hint: "집계 결과에 필터를 걸 때는 HAVING을 사용합니다.", question: "평균 매출액이 2,000원 이상인 고가치 지역만 추출하세요.", solution: "SELECT 지역, AVG(매출액) as 평균매출\\nFROM Customers C\\nJOIN Usage U ON C.고객ID = U.고객ID\\nGROUP BY 지역\\nHAVING\\n  1=1\\n  AND 평균매출 >= 2000\\n;", token: "XN-F6-12" },
-            { day: 7, title: "날짜 차이 계산", tables: ["Customers"], syntax: "JULIANDAY, CAST", hint: "2024-04-10일에서 가입일을 뺀 수치를 정수로 변환하세요.", question: "고객별로 가입한 지 며칠이 지났는지 계산하세요. (기준일: 2024-04-10)", solution: "SELECT 이름, \\n  CAST(JULIANDAY('2024-04-10') - JULIANDAY(가입일) AS INTEGER) as 가입기간\\nFROM Customers\\n;", token: "XN-G7-28" },
-            { day: 8, title: "서브쿼리 마스터", tables: ["Customers", "Usage"], syntax: "WHERE 컬럼 IN (SELECT ...)", hint: "안쪽 쿼리에서 평균 매출액을 먼저 구하세요.", question: "전체 평균 매출액보다 더 많이 쓴 고객의 이름을 찾으세요.", solution: "SELECT 이름\\nFROM Customers\\nWHERE\\n  1=1\\n  AND 고객ID IN (\\n    SELECT 고객ID \\n    FROM Usage \\n    WHERE\\n      1=1\\n      AND 매출액 > (SELECT AVG(매출액) FROM Usage)\\n  )\\n;", token: "XN-H8-90" },
-            { day: 9, title: "WITH절 가독성", tables: ["Usage"], syntax: "WITH 별칭 AS (SELECT ...)", hint: "CTE(WITH)를 사용하여 로직을 단계별로 정의하세요.", question: "매출 합계가 3,000원을 초과하면 'VIP', 아니면 '일반' 등급별 인원수를 구하세요.", solution: "WITH 매출요약 AS (\\n  SELECT 고객ID, SUM(매출액) as 총매출 \\n  FROM Usage \\n  GROUP BY 1\\n),\\n등급부여 AS (\\n  SELECT *, \\n    CASE WHEN 총매출 > 3000 THEN 'VIP' ELSE '일반' END as 등급 \\n  FROM 매출요약\\n)\\nSELECT 등급, COUNT(*) as 고객수\\nFROM 등급부여\\nGROUP BY 1\\n;", token: "XN-I9-33" },
-            { day: 10, title: "최종 실무 리포트", tables: ["Subscriptions", "Customers", "Plans"], syntax: "종합 JOIN & GROUP BY", hint: "Churned 상태인 데이터만 모아 지역과 요금제별로 집계하세요.", question: "해지(Churned)한 고객들의 지역별/요금제별 해지 건수를 분석하고 많은 순으로 나열하세요.", solution: "SELECT \\n  C.지역, \\n  P.요금제명, \\n  COUNT(*) as 해지건수\\nFROM Subscriptions S\\nJOIN Customers C ON S.고객ID = C.고객ID\\nJOIN Plans P ON S.요금제ID = P.요금제ID\\nWHERE\\n  1=1\\n  AND S.상태 = 'Churned'\\nGROUP BY 1, 2\\nORDER BY 3 DESC\\n;", token: "XN-Z0-99" }
+            { day: 1, title: "데이터 필터링", tables: ["Customers"], syntax: "SELECT * FROM 테이블 WHERE 조건;", hint: "지역='서울', 나이 30~39, 가입일 '2024-03-01' 조건을 AND로 연결하세요.", question: "2024년 3월 1일 이후에 가입한 서울 지역의 30대 고객 명단을 추출하세요.\n(출력 컬럼: 모든 컬럼)", solution: `SELECT *\nFROM Customers\nWHERE\n  1=1\n  AND 지역 = '서울'\n  AND 나이 BETWEEN 30 AND 39\n  AND 가입일 >= '2024-03-01'\n;`, token: "XN-A1-82" },
+            { day: 2, title: "가공과 정렬", tables: ["Customers"], syntax: "CASE WHEN, ORDER BY DESC", hint: "나이가 30미만이면 '청년', 50미만이면 '중년', 나머지는 '장년'입니다.", question: "고객을 청년(30세 미만), 중년(30~49세), 장년(50세 이상)으로 분류하고 나이가 많은 순으로 정렬하세요.\n(출력 컬럼: 이름, 나이, 연령그룹)", solution: `SELECT 이름, 나이,\n  CASE WHEN 나이 < 30 THEN '청년'\n       WHEN 나이 < 50 THEN '중년'\n       ELSE '장년' END as 연령그룹\nFROM Customers\nORDER BY 나이 DESC\n;`, token: "XN-B2-19" },
+            { day: 3, title: "통계 요약", tables: ["Customers", "Usage"], syntax: "JOIN, GROUP BY, COUNT(DISTINCT), SUM", hint: "고객ID로 JOIN하고 지역별로 묶어 집계하세요.", question: "지역별 고객 수와 해당 지역의 총 매출액 합계를 계산하세요.\n(출력 컬럼: 지역, 고객수, 총매출)", solution: `SELECT \n  C.지역,\n  COUNT(DISTINCT C.고객ID) as 고객수,\n  SUM(U.매출액) as 총매출\nFROM Customers C\nJOIN Usage U ON C.고객ID = U.고객ID\nGROUP BY C.지역\n;`, token: "XN-C3-44" },
+            { day: 4, title: "다중 테이블 결합", tables: ["Customers", "Subscriptions", "Plans"], syntax: "3-WAY JOIN, WHERE", hint: "상태가 'Active'인 경우만 필터링하세요.", question: "각 고객이 현재 이용 중인 '요금제명' 정보를 매칭해서 보여주세요. (상태가 'Active'인 경우만).\n(출력 컬럼: 이름, 요금제명)", solution: `SELECT C.이름, P.요금제명\nFROM Customers C\nJOIN Subscriptions S ON C.고객ID = S.고객ID\nJOIN Plans P ON S.요금제ID = P.요금제ID\nWHERE\n  1=1\n  AND S.상태 = 'Active'\n;`, token: "XN-D4-50" },
+            { day: 5, title: "누락 데이터 식별", tables: ["Customers", "Subscriptions"], syntax: "LEFT JOIN, IFNULL, IS NULL", hint: "구독 정보가 없는 사람을 찾아야 하므로 LEFT JOIN이 필수입니다.", question: "전체 고객 중 요금제 미가입자를 찾아 요금제명을 '미가입'이라고 표시하세요.\n(출력 컬럼: 이름, 요금제정보)", solution: `SELECT C.이름, IFNULL(S.요금제ID, '미가입') as 요금제정보\nFROM Customers C\nLEFT JOIN Subscriptions S ON C.고객ID = S.고객ID\nWHERE\n  1=1\n  AND S.가입ID IS NULL\n;`, token: "XN-E5-07" },
+            { day: 6, title: "그룹 필터링", tables: ["Customers", "Usage"], syntax: "GROUP BY, HAVING", hint: "집계 결과에 필터를 걸 때는 HAVING을 사용합니다.", question: "평균 매출액이 2,000원 이상인 고가치 지역만 추출하세요.\n(출력 컬럼: 지역, 평균매출)", solution: `SELECT 지역, AVG(매출액) as 평균매출\nFROM Customers C\nJOIN Usage U ON C.고객ID = U.고객ID\nGROUP BY 지역\nHAVING\n  1=1\n  AND 평균매출 >= 2000\n;`, token: "XN-F6-12" },
+            { day: 7, title: "날짜 차이 계산", tables: ["Customers"], syntax: "JULIANDAY, CAST", hint: "2024-04-10일에서 가입일을 뺀 수치를 정수로 변환하세요.", question: "고객별로 가입한 지 며칠이 지났는지 계산하세요. (기준일: 2024-04-10)\n(출력 컬럼: 이름, 가입기간)", solution: `SELECT 이름, \n  CAST(JULIANDAY('2024-04-10') - JULIANDAY(가입일) AS INTEGER) as 가입기간\nFROM Customers\n;`, token: "XN-G7-28" },
+            { day: 8, title: "서브쿼리 마스터", tables: ["Customers", "Usage"], syntax: "WHERE 컬럼 IN (SELECT ...)", hint: "안쪽 쿼리에서 평균 매출액을 먼저 구하세요.", question: "전체 평균 매출액보다 더 많이 쓴 고객의 이름을 찾으세요.\n(출력 컬럼: 이름)", solution: `SELECT 이름\nFROM Customers\nWHERE\n  1=1\n  AND 고객ID IN (\n    SELECT 고객ID \n    FROM Usage \n    WHERE\n      1=1\n      AND 매출액 > (SELECT AVG(매출액) FROM Usage)\n  )\n;`, token: "XN-H8-90" },
+            { day: 9, title: "WITH절 가독성", tables: ["Usage"], syntax: "WITH 별칭 AS (SELECT ...)", hint: "CTE(WITH)를 사용하여 로직을 단계별로 정의하세요.", question: "매출 합계가 3,000원을 초과하면 'VIP', 아니면 '일반' 등급별 인원수를 구하세요.\n(출력 컬럼: 등급, 고객수)", solution: `WITH 매출요약 AS (\n  SELECT 고객ID, SUM(매출액) as 총매출 \n  FROM Usage \n  GROUP BY 1\n),\n등급부여 AS (\n  SELECT *, \n    CASE WHEN 총매출 > 3000 THEN 'VIP' ELSE '일반' END as 등급 \n  FROM 매출요약\n)\nSELECT 등급, COUNT(*) as 고객수\nFROM 등급부여\nGROUP BY 1\n;`, token: "XN-I9-33" },
+            { day: 10, title: "최종 실무 리포트", tables: ["Subscriptions", "Customers", "Plans"], syntax: "종합 JOIN & GROUP BY", hint: "Churned 상태인 데이터만 모아 지역과 요금제별로 집계하세요.", question: "해지(Churned)한 고객들의 지역별/요금제별 해지 건수를 분석하고 많은 순으로 나열하세요.\n(출력 컬럼: 지역, 요금제명, 해지건수)", solution: `SELECT \n  C.지역, \n  P.요금제명, \n  COUNT(*) as 해지건수\nFROM Subscriptions S\nJOIN Customers C ON S.고객ID = C.고객ID\nJOIN Plans P ON S.요금제ID = P.요금제ID\nWHERE\n  1=1\n  AND S.상태 = 'Churned'\nGROUP BY 1, 2\nORDER BY 3 DESC\n;`, token: "XN-Z0-99" }
         ];
 
         function ResultTable({ data, title }) {
@@ -119,6 +121,7 @@
             const [db, setDb] = useState(null);
             const [queryResult, setQueryResult] = useState(null);
             const [isCorrect, setIsCorrect] = useState(null);
+            const [errorReason, setErrorReason] = useState("");
             const [solvedDays, setSolvedDays] = useState([]);
             const [showHint, setShowHint] = useState(false);
             const [showVerificationAnswer, setShowVerificationAnswer] = useState(false);
@@ -141,142 +144,205 @@
 
             const runQuery = () => {
                 if (!db) return;
-                setIsCorrect(null); setShowHint(false);
+                setIsCorrect(null); setShowHint(false); setErrorReason("");
                 try {
-                    const cleanedQuery = userQuery.replace(/\u00a0/g, ' ');
+                    const cleanedQuery = userQuery.replace(/\u00a0/g, ' ').trim();
+                    if (!cleanedQuery) {
+                        setErrorReason("에디터에 쿼리를 먼저 작성해 주세요.");
+                        setIsCorrect(false);
+                        return;
+                    }
+                    
                     const active = curriculum.find(c => c.day === currentDay) || curriculum[0];
-                    const userRes = db.exec(cleanedQuery);
                     const answerRes = db.exec(active.solution);
+                    const userRes = db.exec(cleanedQuery);
                     
                     if (userRes.length > 0) {
                         setQueryResult(userRes[0]);
-                        const normalize = (res) => JSON.stringify([...res[0].values].sort((a,b) => JSON.stringify(a).localeCompare(JSON.stringify(b))));
-                        const match = normalize(userRes) === normalize(answerRes);
-                        setIsCorrect(match);
-                        if (match && !solvedDays.includes(currentDay)) {
-                            const next = [...solvedDays, currentDay];
-                            setSolvedDays(next);
-                            localStorage.setItem('sql_master_v3_final_solved', JSON.stringify(next));
+                        const uCols = userRes[0].columns.length;
+                        const aCols = answerRes[0].columns.length;
+                        const uRows = userRes[0].values.length;
+                        const aRows = answerRes[0].values.length;
+
+                        if (uCols !== aCols) {
+                            setErrorReason(`정보(컬럼) 선택이 잘못되었습니다. 정답은 ${aCols}개의 열을 보여주어야 하지만, 현재 ${uCols}개의 열만 출력되었습니다. 지문의 '(출력 컬럼: ...)' 내용을 다시 확인해 주세요.`);
+                            setIsCorrect(false);
+                        } else if (uRows !== aRows) {
+                            setErrorReason(`데이터 건수(행)가 정답과 다릅니다. 필터(WHERE) 조건을 확인해 주세요. 정답은 ${aRows}건이 나와야 하지만, 현재 ${uRows}건이 출력되었습니다.`);
+                            setIsCorrect(false);
+                        } else {
+                            const normalize = (res) => JSON.stringify([...res[0].values].sort((a,b) => JSON.stringify(a).localeCompare(JSON.stringify(b))));
+                            const match = normalize(userRes) === normalize(answerRes);
+                            if (match) {
+                                setIsCorrect(true);
+                                if (!solvedDays.includes(currentDay)) {
+                                    const next = [...solvedDays, currentDay];
+                                    setSolvedDays(next);
+                                    localStorage.setItem('sql_master_v3_final_solved', JSON.stringify(next));
+                                }
+                            } else {
+                                setErrorReason("행/열의 개수는 맞지만, 데이터 내용이 다릅니다. 조건의 값(대소문자, 오타 등)이나 범위를 다시 한 번 확인해 보세요.");
+                                setIsCorrect(false);
+                            }
                         }
-                    } else { setIsCorrect(false); }
-                } catch (e) { setIsCorrect(false); }
+                    } else { 
+                        setErrorReason("결과 데이터가 없습니다. 필터(WHERE) 조건이 너무 까다롭거나 쿼리 문법에 오류가 없는지 확인해 보세요.");
+                        setIsCorrect(false); 
+                    }
+                } catch (e) { 
+                    setErrorReason("SQL 문법 오류가 발생했습니다: " + e.message);
+                    setIsCorrect(false); 
+                }
             };
 
             const active = curriculum.find(c => c.day === currentDay) || curriculum[0];
 
             return (
-                <div className="min-h-screen flex flex-col p-4 md:p-10 max-w-7xl mx-auto">
-                    <header className="flex flex-col md:flex-row justify-between items-center mb-10 gap-8 border-b pb-8">
-                        <div className="flex items-center gap-4 text-left shrink-0">
-                            <div className="bg-blue-600 p-2.5 rounded-2xl shadow-lg shadow-blue-200 shrink-0"><CustomIcon name="database" color="white" /></div>
-                            <div className="whitespace-nowrap">
-                                <h1 className="text-2xl font-black text-slate-900 tracking-tighter uppercase leading-none mb-1">SQL 10일 기본 완성</h1>
-                                <p className="text-[10px] text-blue-600 font-bold uppercase tracking-widest leading-none">데이터 분석의 첫걸음, SQL 기본 마스터</p>
+                <div className="min-h-screen flex flex-col bg-slate-50">
+                    <div className="flex-grow">
+                        <header className="max-w-7xl mx-auto p-4 md:p-10 pb-4 flex flex-col md:flex-row justify-between items-center gap-8 border-b border-slate-200">
+                            <div className="flex items-center gap-4 text-left shrink-0">
+                                <div className="bg-blue-600 p-2.5 rounded-2xl shadow-lg shadow-blue-200 shrink-0"><CustomIcon name="database" color="white" /></div>
+                                <div className="whitespace-nowrap">
+                                    <h1 className="text-2xl font-black text-slate-900 tracking-tighter uppercase leading-none mb-1">SQL 10일 기본 완성</h1>
+                                    <p className="text-[10px] text-blue-600 font-bold uppercase tracking-widest leading-none">데이터 분석의 첫걸음, SQL 기본 마스터</p>
+                                </div>
                             </div>
-                        </div>
-                        <div className="flex gap-1 overflow-x-auto pb-2 max-w-full md:max-w-[60%] lg:max-w-none custom-scrollbar">
-                            {curriculum.map(c => {
-                                const isLocked = false; 
-                                return (
-                                    <button key={c.day} onClick={() => {setCurrentDay(c.day); setUserQuery(""); setQueryResult(null); setIsCorrect(null); setShowHint(false); setShowVerificationAnswer(false);}} className={"px-4 py-2 rounded-xl text-xs font-black transition-all shrink-0 flex items-center gap-2 " + (currentDay === c.day ? "bg-blue-600 text-white scale-105 shadow-lg" : "bg-white text-slate-400 border border-slate-200 hover:border-blue-400")}>
+                            <div className="flex gap-1 overflow-x-auto pb-2 max-w-full md:max-w-[60%] lg:max-w-none custom-scrollbar">
+                                {curriculum.map(c => (
+                                    <button key={c.day} onClick={() => {setCurrentDay(c.day); setUserQuery(""); setQueryResult(null); setIsCorrect(null); setShowHint(false); setShowVerificationAnswer(false); setErrorReason("");}} className={"px-4 py-2 rounded-xl text-xs font-black transition-all shrink-0 flex items-center gap-2 " + (currentDay === c.day ? "bg-blue-600 text-white scale-105 shadow-lg" : "bg-white text-slate-400 border border-slate-200 hover:border-blue-400")}>
                                         {solvedDays.includes(c.day) ? <CustomIcon name="check" className="w-3 h-3" color="#10b981" /> : <CustomIcon name="play" className="w-3 h-3" />} Day {c.day < 10 ? '0' + c.day : c.day}
                                     </button>
-                                );
-                            })}
-                        </div>
-                    </header>
+                                ))}
+                            </div>
+                        </header>
 
-                    <main className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                        <div className="lg:col-span-4 space-y-6">
-                            <section className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm text-left animate-fade h-full">
-                                <div className="flex justify-between items-start mb-2">
-                                    <h2 className="text-sm font-black text-blue-600 uppercase tracking-widest">MISSION {active.day}</h2>
-                                    <span className="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">검증 모드</span>
-                                </div>
-                                <h3 className="text-xl font-bold text-slate-900 mb-6 tracking-tight">{active.title}</h3>
-                                
-                                <div className="space-y-4 mb-8">
-                                    <div className="flex items-center gap-2 text-slate-900">
-                                        <CustomIcon name="message" className="w-5 h-5 text-blue-600" />
-                                        <h4 className="font-black text-xs uppercase tracking-widest">실무 상황</h4>
+                        <main className="max-w-7xl mx-auto p-4 md:p-10 grid grid-cols-1 lg:grid-cols-12 gap-10 pb-32">
+                            <div className="lg:col-span-4 space-y-6">
+                                {/* Mission Info Card */}
+                                <section className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm text-left animate-fade">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <h2 className="text-sm font-black text-blue-600 uppercase tracking-widest">MISSION {active.day}</h2>
+                                        <span className="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">검증 모드</span>
                                     </div>
-                                    <div className="bg-blue-600 p-6 rounded-2xl text-white shadow-xl shadow-blue-200/50 relative overflow-hidden border-2 border-blue-400">
-                                        <CustomIcon name="message" className="absolute -bottom-2 -right-2 w-16 h-16 text-blue-500 opacity-20" />
-                                        <p className="text-[16px] leading-relaxed italic font-bold relative z-10">"{active.question}"</p>
+                                    <h3 className="text-xl font-bold text-slate-900 mb-6 tracking-tight">{active.title}</h3>
+                                    
+                                    <div className="space-y-4 mb-8">
+                                        <div className="flex items-center gap-2 text-slate-900">
+                                            <CustomIcon name="message" className="w-5 h-5 text-blue-600" />
+                                            <h4 className="font-black text-xs uppercase tracking-widest">실무 상황</h4>
+                                        </div>
+                                        <div className="bg-blue-600 p-6 rounded-2xl text-white shadow-xl shadow-blue-200/50 relative overflow-hidden border-2 border-blue-400 font-bold italic leading-relaxed text-[15px]">
+                                            <CustomIcon name="message" className="absolute -bottom-2 -right-2 w-16 h-16 text-blue-500 opacity-20" />
+                                            <p className="relative z-10 whitespace-pre-wrap">"{active.question}"</p>
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div className="bg-slate-50 p-4 rounded-xl mb-6 border border-slate-100">
-                                    <h4 className="text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">SQL 문법 가이드</h4>
-                                    <p className="text-[11px] font-mono text-blue-800 leading-relaxed font-bold">{active.syntax}</p>
-                                </div>
-                                
-                                <div className="flex flex-col gap-2">
-                                    <button onClick={() => setShowHint(!showHint)} className="text-[10px] font-black text-slate-400 hover:text-blue-600 flex items-center gap-1 uppercase tracking-tighter transition-colors">
+                                    <div className="bg-slate-50 p-4 rounded-xl mb-6 border border-slate-100">
+                                        <h4 className="text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">SQL 문법 가이드</h4>
+                                        <p className="text-[11px] font-mono text-blue-800 leading-relaxed font-bold">{active.syntax}</p>
+                                    </div>
+                                    
+                                    <button onClick={() => setShowHint(!showHint)} className="text-[10px] font-black text-slate-400 hover:text-blue-600 flex items-center gap-1 uppercase tracking-tighter transition-colors w-full justify-start">
                                         <CustomIcon name="info" className="w-3 h-3" /> {showHint ? "힌트 닫기" : "힌트 보기"}
                                     </button>
-                                    {showHint && <p className="p-4 bg-amber-50 text-amber-700 text-[11px] rounded-xl border border-amber-100 animate-fade leading-relaxed">💡 {active.hint}</p>}
+                                    {showHint && <p className="mt-3 p-4 bg-amber-50 text-amber-700 text-[11px] rounded-xl border border-amber-100 animate-fade leading-relaxed">💡 {active.hint}</p>}
+                                </section>
 
-                                    <button onClick={() => setShowVerificationAnswer(!showVerificationAnswer)} className="text-[10px] font-black text-emerald-500 hover:text-emerald-700 flex items-center gap-1 uppercase tracking-tighter transition-colors mt-2">
-                                        <CustomIcon name="eye" className="w-3 h-3" /> {showVerificationAnswer ? "정답 코드 숨기기" : "검증용 정답 확인"}
-                                    </button>
-                                    {showVerificationAnswer && (
-                                        <div className="p-4 bg-emerald-50 text-emerald-800 text-[11px] rounded-xl border border-emerald-100 animate-fade leading-relaxed font-mono whitespace-pre-wrap">
-                                            {active.solution.replace(/\\n/g, '\n')}
+                                {/* Separate Answer Reference Box */}
+                                <section className="bg-emerald-900 rounded-3xl overflow-hidden shadow-2xl animate-fade">
+                                    <div className="px-5 py-3 bg-emerald-800 flex justify-between items-center border-b border-emerald-700">
+                                        <div className="flex items-center gap-2">
+                                            <CustomIcon name="eye" className="w-4 h-4 text-emerald-300" />
+                                            <span className="text-[10px] font-black text-emerald-100 uppercase tracking-widest">검증용 정답 레퍼런스</span>
+                                        </div>
+                                        <button 
+                                            onClick={() => setShowVerificationAnswer(!showVerificationAnswer)}
+                                            className="text-[10px] font-bold text-emerald-300 hover:text-white transition-colors uppercase"
+                                        >
+                                            {showVerificationAnswer ? "숨기기" : "보기"}
+                                        </button>
+                                    </div>
+                                    {showVerificationAnswer ? (
+                                        <div className="p-6 relative">
+                                            <pre className="text-[12px] font-mono text-emerald-200 leading-relaxed overflow-x-auto custom-scrollbar whitespace-pre">
+                                                {active.solution}
+                                            </pre>
+                                            <div className="mt-4 pt-4 border-t border-emerald-800/50 flex items-center gap-2 text-emerald-400 text-[10px] font-bold italic">
+                                                <CustomIcon name="copy" className="w-3 h-3" /> 드래그하여 복사 후 우측 에디터에 테스트해보세요.
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="p-8 text-center">
+                                            <p className="text-emerald-400 text-xs font-bold opacity-60">정답 코드가 이곳에 표시됩니다.</p>
+                                        </div>
+                                    )}
+                                </section>
+                            </div>
+
+                            <div className="lg:col-span-8 space-y-6 flex flex-col">
+                                {/* Table Schema Section */}
+                                <div className="space-y-3 text-left animate-fade">
+                                    <div className="flex items-center gap-2 px-1">
+                                        <CustomIcon name="layout" className="w-4 h-4 text-slate-400" />
+                                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Required Tables Reference</h3>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        {active.tables.map(name => (
+                                            <div key={name} className="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm hover:border-blue-200 transition-all">
+                                                <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest block mb-1.5 flex items-center gap-1">
+                                                    <CustomIcon name="database" className="w-3 h-3" /> {name}
+                                                </span>
+                                                <div className="overflow-x-auto custom-scrollbar">
+                                                    <table className="w-full text-[8px] text-left">
+                                                        <thead><tr className="border-b text-slate-400 font-bold">{schemaData[name].columns.map(c => <th key={c} className="px-1 py-1 uppercase">{c}</th>)}</tr></thead>
+                                                        <tbody>{schemaData[name].samples.map((row, i) => <tr key={i} className="border-b border-slate-50 last:border-0">{row.map((val, j) => <td key={j} className="px-1 py-1 font-mono text-slate-600 whitespace-nowrap">{String(val)}</td>)}</tr>)}</tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* SQL Editor Section */}
+                                <div className="bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col border border-slate-700">
+                                    <div className="bg-slate-800 px-8 py-4 border-b border-slate-700 flex justify-between items-center"><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">SQL Editor</span></div>
+                                    <textarea className="p-8 bg-slate-900 text-blue-100 font-mono text-sm focus:outline-none resize-none h-[300px] leading-relaxed sql-editor" placeholder="-- 직접 쿼리를 작성하거나 왼쪽 정답을 참고하세요." value={userQuery} onChange={e => setUserQuery(e.target.value)}></textarea>
+                                    <div className="p-6 bg-slate-800 border-t border-slate-700 flex justify-end">
+                                        <button onClick={runQuery} className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-3 rounded-2xl font-black text-sm shadow-xl active:scale-95 transition-all flex items-center gap-2">
+                                            <CustomIcon name="play" className="w-4 h-4 fill-current" /> RUN MISSION
+                                        </button>
+                                    </div>
+                                    {isCorrect !== null && (
+                                        <div className={"p-8 border-t border-slate-800 " + (isCorrect ? "bg-emerald-950/20" : "bg-rose-950/20")}>
+                                            <div className="flex items-center justify-between mb-4 text-sm font-black tracking-tight">
+                                                {isCorrect ? 
+                                                    <div className="text-emerald-400 flex items-center gap-2 animate-bounce"><CustomIcon name="award" className="w-5 h-5" /> SUCCESS! 인증코드: {active.token}</div> : 
+                                                    <div className="text-rose-400 flex items-start gap-2">
+                                                        <CustomIcon name="alert" className="w-5 h-5 shrink-0 mt-0.5" />
+                                                        <div>
+                                                            <p className="uppercase text-[10px] opacity-70 font-black">Logic Diagnosis</p>
+                                                            <p className="font-bold leading-relaxed">{errorReason}</p>
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </div>
+                                            {queryResult && <ResultTable data={queryResult} title="Your Execution Result" />}
                                         </div>
                                     )}
                                 </div>
-                            </section>
-                        </div>
-
-                        <div className="lg:col-span-8 space-y-6 flex flex-col">
-                            <div className="space-y-3 text-left animate-fade">
-                                <div className="flex items-center gap-2 px-1">
-                                    <CustomIcon name="layout" className="w-4 h-4 text-slate-400" />
-                                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Required Tables Reference</h3>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    {active.tables.map(name => (
-                                        <div key={name} className="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm hover:border-blue-200 transition-all">
-                                            <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest block mb-1.5 flex items-center gap-1">
-                                                <CustomIcon name="database" className="w-3 h-3" /> {name}
-                                            </span>
-                                            <div className="overflow-x-auto custom-scrollbar">
-                                                <table className="w-full text-[8px] text-left">
-                                                    <thead><tr className="border-b text-slate-400 font-bold">{schemaData[name].columns.map(c => <th key={c} className="px-1 py-1 uppercase">{c}</th>)}</tr></thead>
-                                                    <tbody>{schemaData[name].samples.map((row, i) => <tr key={i} className="border-b border-slate-50 last:border-0">{row.map((val, j) => <td key={j} className="px-1 py-1 font-mono text-slate-500 whitespace-nowrap">{String(val)}</td>)}</tr>)}</tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
                             </div>
-
-                            <div className="bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col border border-slate-700">
-                                <div className="bg-slate-800 px-8 py-4 border-b border-slate-700 flex justify-between items-center"><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">SQL Editor</span></div>
-                                <textarea className="p-8 bg-slate-900 text-blue-100 font-mono text-sm focus:outline-none resize-none h-[300px] leading-relaxed sql-editor" placeholder="-- 상단의 스키마를 참고하거나 왼쪽 '정답 확인'을 복사해 테스트해 보세요." value={userQuery} onChange={e => setUserQuery(e.target.value)}></textarea>
-                                <div className="p-6 bg-slate-800 border-t border-slate-700 flex justify-end">
-                                    <button onClick={runQuery} className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-3 rounded-2xl font-black text-sm shadow-xl active:scale-95 transition-all flex items-center gap-2">
-                                        <CustomIcon name="play" className="w-4 h-4 fill-current" /> RUN MISSION
-                                    </button>
-                                </div>
-                                {isCorrect !== null && (
-                                    <div className={"p-8 border-t border-slate-800 " + (isCorrect ? "bg-emerald-950/20" : "bg-rose-950/20")}>
-                                        <div className="flex items-center justify-between mb-4 text-sm font-black tracking-tight">
-                                            {isCorrect ? <div className="text-emerald-400 flex items-center gap-2 animate-bounce"><CustomIcon name="award" className="w-5 h-5" /> SUCCESS! 인증코드: {active.token}</div> : <div className="text-rose-400 flex items-center gap-2"><CustomIcon name="info" className="w-5 h-5" /> LOGIC ERROR: 결과가 정답과 다릅니다.</div>}
-                                        </div>
-                                        {queryResult && <ResultTable data={queryResult} title="Your Execution Result" />}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </main>
-                    <footer className="bg-white border-t p-8 text-slate-300 text-[10px] font-black uppercase tracking-[0.4em] text-center mt-10">SQL Mastery Course v3.8 - Header UI Optimized</footer>
+                        </main>
+                    </div>
+                    <footer className="bg-white border-t p-8 text-slate-300 text-[10px] font-black uppercase tracking-[0.4em] text-center shrink-0">
+                        SQL Mastery Course v4.4 - Fixed Layout Overlap
+                    </footer>
                 </div>
             );
         }
 
-        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
