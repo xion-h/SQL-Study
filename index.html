@@ -11,7 +11,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700;900&display=swap');
-        body { font-family: 'Pretendard', sans-serif; margin: 0; background: #f8fafc; color: #1e293b; }
+        body { font-family: 'Pretendard', sans-serif; margin: 0; background: #f8fafc; color: #1e293b; overflow-x: hidden; }
         .sql-editor { font-family: 'Consolas', 'Monaco', 'Fira Code', monospace !important; }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
@@ -64,9 +64,9 @@
                 columns: ["plan_id", "plan_name", "price"],
                 types: ["TEXT", "TEXT", "INTEGER"],
                 samples: [
-                    ["P-01", "5G 무제한 95", 95000],
-                    ["P-02", "LTE 실속 33", 33000],
-                    ["P-03", "IPTV 베이직", 15000]
+                    ["P-01", "5G 프리미어 에센셜", 85000],
+                    ["P-02", "5G 스탠다드", 75000],
+                    ["P-03", "(LTE) 추가 요금 걱정 없는 데이터 69", 69000]
                 ]
             },
             Subscriptions: {
@@ -106,10 +106,10 @@
             },
             { 
                 day: 3, title: "데이터 형 변환", tables: ["Customers"], 
-                syntax: "CAST(컬럼 AS INTEGER), STRFTIME()", 
-                hint: "STRFTIME('%Y', join_date)를 사용하여 연도를 뽑고, 이를 INTEGER로 변환하세요.", 
-                question: `고객별 이름과 가입 연도를 추출하되, 가입 연도는 숫자(INTEGER)형태로 변환하세요.\n(출력 컬럼: name, join_year)`, 
-                solution: `SELECT name, \n  CAST(STRFTIME('%Y', join_date) AS INTEGER) as join_year\nFROM Customers\n;`, 
+                syntax: "CAST(컬럼 AS INTEGER)", 
+                hint: "CAST(join_date AS INTEGER) 문법을 사용하여 날짜 형식을 숫자로 강제 변환해 보세요.", 
+                question: `고객별 이름(name)과 가입날짜(join_date)를 조회하되, 가입날짜는 숫자(INTEGER) 형태로 변환하여 출력하세요.\n(출력 컬럼: name, join_date_int)`, 
+                solution: `SELECT name, \n  CAST(join_date AS INTEGER) as join_date_int\nFROM Customers\n;`, 
                 token: "XN-03-SUCC" 
             },
             { 
@@ -129,11 +129,11 @@
                 token: "XN-05-SUCC" 
             },
             { 
-                day: 6, title: "NULL 데이터 처리", tables: ["Customers", "Subscriptions"], 
-                syntax: "LEFT JOIN, CASE WHEN ... IS NULL", 
-                hint: "LEFT JOIN 후, plan_id가 NULL인 경우 'No Plan'이라고 표시하도록 CASE WHEN을 작성하세요.", 
-                question: `전체 고객의 이름과 요금제ID를 매칭하되, 요금제가 없는 미가입자는 'No Plan'이라고 표시하세요.\n(출력 컬럼: name, sub_info)`, 
-                solution: `SELECT C.name, \n  CASE WHEN S.plan_id IS NULL THEN 'No Plan' \n       ELSE S.plan_id END as sub_info\nFROM Customers C\nLEFT JOIN Subscriptions S ON C.id = S.id\n;`, 
+                day: 6, title: "조건별 등급 산정", tables: ["Plans"], 
+                syntax: "CASE WHEN ... THEN ... ELSE ... END", 
+                hint: "가격(price)이 80,000원 이상이면 'Premium', 아니면 'Basic'으로 표시하세요.", 
+                question: `요금제명(plan_name)과 함께 가격이 80,000원 이상인 상품은 'Premium', 그렇지 않으면 'Basic' 등급을 부여하여 조회하세요.\n(출력 컬럼: plan_name, price_grade)`, 
+                solution: `SELECT plan_name, \n  CASE WHEN price >= 80000 THEN 'Premium' \n       ELSE 'Basic' END as price_grade\nFROM Plans\n;`, 
                 token: "XN-06-SUCC" 
             },
             { 
@@ -235,26 +235,16 @@
                         const aRows = answerRes[0].values;
 
                         if (uCols.length !== aCols.length) {
-                            setErrorReason(`정보(컬럼) 선택이 잘못되었습니다. 정답은 ${aCols.length}개의 열을 보여주어야 하지만, 현재 ${uCols.length}개의 열만 출력되었습니다. 지문의 '(출력 컬럼: ...)' 내용을 다시 확인해 주세요.`);
+                            setErrorReason(`정보(컬럼) 선택이 잘못되었습니다. 정답은 ${aCols.length}개의 열을 보여주어야 하지만, 현재 ${uCols.length}개의 열만 출력되었습니다.`);
                             setIsCorrect(false);
                         } else if (uValues.length !== aRows.length) {
-                            setErrorReason(`데이터 건수(행)가 정답과 다릅니다. 필터(WHERE) 조건을 확인해 주세요. 정답은 ${aRows.length}건이 나와야 하지만, 현재 ${uValues.length}건이 출력되었습니다.`);
+                            setErrorReason(`데이터 건수(행)가 정답과 다릅니다. 필터(WHERE) 조건을 확인해 주세요. 정답은 ${aRows.length}건이지만, 현재 ${uValues.length}건이 출력되었습니다.`);
                             setIsCorrect(false);
                         } else {
-                            const userRows = uValues.map(row => {
-                                const obj = {};
-                                uCols.forEach((col, i) => obj[col.toLowerCase()] = row[i]);
-                                return obj;
-                            });
-                            const answerRows = aRows.map(row => {
-                                const obj = {};
-                                aCols.forEach((col, i) => obj[col.toLowerCase()] = row[i]);
-                                return obj;
-                            });
-
-                            const normalizeRow = (row) => JSON.stringify(Object.keys(row).sort().reduce((acc, key) => ({...acc, [key]: row[key]}), {}));
-                            const sortLogic = (a, b) => normalizeRow(a).localeCompare(normalizeRow(b));
-                            const match = JSON.stringify(userRows.sort(sortLogic)) === JSON.stringify(answerRows.sort(sortLogic));
+                            const normalizeRowValues = (row) => [...row].sort((a, b) => String(a).localeCompare(String(b)));
+                            const userNormalized = uValues.map(normalizeRowValues).sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+                            const answerNormalized = aRows.map(normalizeRowValues).sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+                            const match = JSON.stringify(userNormalized) === JSON.stringify(answerNormalized);
 
                             if (match) {
                                 setIsCorrect(true);
@@ -269,7 +259,7 @@
                             }
                         }
                     } else { 
-                        setErrorReason("결과 데이터가 없습니다. 필터(WHERE) 조건이 너무 까다롭거나 쿼리에 문법적 오류가 없는지 확인해 보세요.");
+                        setErrorReason("결과 데이터가 없습니다. 필터(WHERE) 조건이 너무 까다롭거나 쿼리 문법에 오류가 없는지 확인해 보세요.");
                         setIsCorrect(false); 
                     }
                 } catch (e) { 
@@ -300,23 +290,23 @@
                             </div>
                         </header>
 
-                        <main className="max-w-7xl mx-auto p-4 md:p-10 grid grid-cols-1 lg:grid-cols-12 gap-10 pb-32">
+                        <main className="max-w-7xl mx-auto p-4 md:p-10 grid grid-cols-1 lg:grid-cols-12 gap-10 pb-48">
                             <div className="lg:col-span-4 space-y-6">
-                                <section className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm text-left animate-fade">
+                                <section className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm text-left animate-fade h-fit">
                                     <div className="flex justify-between items-start mb-2">
                                         <h2 className="text-sm font-black text-blue-600 uppercase tracking-widest">MISSION {active.day}</h2>
                                         <span className="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">검증 모드</span>
                                     </div>
-                                    <h3 className="text-xl font-bold text-slate-900 mb-6 tracking-tight">{active.title}</h3>
+                                    <h3 className="text-xl font-bold text-slate-900 mb-6 tracking-tight text-left">{active.title}</h3>
                                     
-                                    <div className="space-y-4 mb-8">
-                                        <div className="flex items-center gap-2 text-slate-900 text-left">
+                                    <div className="space-y-4 mb-8 text-left">
+                                        <div className="flex items-center gap-2 text-slate-900">
                                             <CustomIcon name="message" className="w-5 h-5 text-blue-600" />
                                             <h4 className="font-black text-xs uppercase tracking-widest">실무 상황</h4>
                                         </div>
-                                        <div className="bg-blue-600 p-6 rounded-2xl text-white shadow-xl shadow-blue-200/50 relative overflow-hidden border-2 border-blue-400 font-bold italic leading-relaxed text-[15px] text-left">
+                                        <div className="bg-blue-600 p-6 rounded-2xl text-white shadow-xl shadow-blue-200/50 relative overflow-hidden border-2 border-blue-400 font-bold italic leading-relaxed text-[15px]">
                                             <CustomIcon name="message" className="absolute -bottom-2 -right-2 w-16 h-16 text-blue-500 opacity-20" />
-                                            <p className="relative z-10 whitespace-pre-wrap">"{active.question}"</p>
+                                            <p className="relative z-10 whitespace-pre-wrap text-left">"{active.question}"</p>
                                         </div>
                                     </div>
 
@@ -331,7 +321,7 @@
                                     {showHint && <p className="mt-3 p-4 bg-amber-50 text-amber-700 text-[11px] rounded-xl border border-amber-100 animate-fade leading-relaxed text-left">💡 {active.hint}</p>}
                                 </section>
 
-                                <section className="bg-emerald-900 rounded-3xl overflow-hidden shadow-2xl animate-fade text-left">
+                                <section className="bg-emerald-900 rounded-3xl overflow-hidden shadow-2xl animate-fade text-left h-fit">
                                     <div className="px-5 py-3 bg-emerald-800 flex justify-between items-center border-b border-emerald-700">
                                         <div className="flex items-center gap-2">
                                             <CustomIcon name="eye" className="w-4 h-4 text-emerald-300" />
@@ -363,9 +353,9 @@
 
                             <div className="lg:col-span-8 space-y-6 flex flex-col">
                                 <div className="space-y-3 text-left animate-fade">
-                                    <div className="flex items-center gap-2 px-1">
+                                    <div className="flex items-center gap-2 px-1 text-left">
                                         <CustomIcon name="layout" className="w-4 h-4 text-slate-400" />
-                                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Required Tables Reference</h3>
+                                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest text-left">Required Tables Reference</h3>
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         {active.tables.map(name => (
@@ -386,7 +376,7 @@
 
                                 <div className="bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col border border-slate-700 text-left">
                                     <div className="bg-slate-800 px-8 py-4 border-b border-slate-700 flex justify-between items-center"><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">SQL Editor</span></div>
-                                    <textarea className="p-8 bg-slate-900 text-blue-100 font-mono text-sm focus:outline-none resize-none h-[320px] leading-relaxed sql-editor" placeholder="-- 직접 쿼리를 작성하거나 왼쪽 정답을 참고하세요." value={userQuery} onChange={e => setUserQuery(e.target.value)}></textarea>
+                                    <textarea className="p-8 bg-slate-900 text-blue-100 font-mono text-sm focus:outline-none resize-none h-[300px] leading-relaxed sql-editor text-left" placeholder="-- 직접 쿼리를 작성하거나 왼쪽 정답을 참고하세요." value={userQuery} onChange={e => setUserQuery(e.target.value)}></textarea>
                                     <div className="p-6 bg-slate-800 border-t border-slate-700 flex justify-end">
                                         <button onClick={runQuery} className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-3 rounded-2xl font-black text-sm shadow-xl active:scale-95 transition-all flex items-center gap-2 uppercase tracking-widest">
                                             <CustomIcon name="play" className="w-4 h-4 fill-current" /> RUN MISSION
@@ -394,14 +384,14 @@
                                     </div>
                                     {isCorrect !== null && (
                                         <div className={"p-8 border-t border-slate-800 text-left " + (isCorrect ? "bg-emerald-950/20" : "bg-rose-950/20")}>
-                                            <div className="flex items-center justify-between mb-4 text-sm font-black tracking-tight">
+                                            <div className="flex items-center justify-between mb-4 text-sm font-black tracking-tight text-left">
                                                 {isCorrect ? 
-                                                    <div className="text-emerald-400 flex items-center gap-2 animate-bounce"><CustomIcon name="award" className="w-5 h-5" /> SUCCESS! 인증코드: {active.token}</div> : 
-                                                    <div className="text-rose-400 flex items-start gap-2">
+                                                    <div className="text-emerald-400 flex items-center gap-2 animate-bounce text-left"><CustomIcon name="award" className="w-5 h-5" /> SUCCESS! 인증코드: {active.token}</div> : 
+                                                    <div className="text-rose-400 flex items-start gap-2 text-left">
                                                         <CustomIcon name="alert" className="w-5 h-5 shrink-0 mt-0.5" />
                                                         <div>
-                                                            <p className="uppercase text-[10px] opacity-70 font-black">Logic Diagnosis</p>
-                                                            <p className="font-bold leading-relaxed">{errorReason}</p>
+                                                            <p className="uppercase text-[10px] opacity-70 font-black text-left">Logic Diagnosis</p>
+                                                            <p className="font-bold leading-relaxed text-left">{errorReason}</p>
                                                         </div>
                                                     </div>
                                                 }
@@ -413,8 +403,8 @@
                             </div>
                         </main>
                     </div>
-                    <footer className="bg-white border-t p-8 text-slate-300 text-[10px] font-black uppercase tracking-[0.4em] text-center shrink-0">
-                        SQL Mastery Course v4.9 - Full 10-Day Curriculum Restored
+                    <footer className="bg-white border-t border-slate-200 p-8 text-slate-300 text-[10px] font-black uppercase tracking-[0.4em] text-center shrink-0 relative z-10">
+                        SQL Mastery Course v5.2 - Alias-Agnostic Validation & BigQuery Logic
                     </footer>
                 </div>
             );
