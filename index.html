@@ -51,13 +51,13 @@
         const schemaData = {
             Customers: {
                 columns: ["id", "name", "age", "city", "join_date"],
-                types: ["TEXT", "TEXT", "INTEGER", "TEXT", "TEXT"], // join_date is string 'YYYYMMDD'
+                types: ["TEXT", "TEXT", "INTEGER", "TEXT", "TEXT"], 
                 samples: [
-                    ["C-001", "김철수", 32, "서울", "20240301"],
-                    ["C-002", "이영희", 28, "경기", "20240305"],
-                    ["C-003", "박민수", 54, "서울", "20240220"],
-                    ["C-004", "최지우", 35, "서울", "20240215"], 
-                    ["C-005", "정다은", 31, "인천", "20240310"]
+                    ["C-001", "김철수", 32, "서울", "20260301"],
+                    ["C-002", "이영희", 28, "경기", "20260305"],
+                    ["C-003", "박민수", 54, "서울", "20260220"],
+                    ["C-004", "최지우", 35, "서울", "20260215"], 
+                    ["C-005", "정다은", 31, "인천", "20260310"]
                 ]
             },
             Plans: {
@@ -91,9 +91,9 @@
             { 
                 day: 1, title: "데이터 필터링", tables: ["Customers"], 
                 syntax: "SELECT * FROM 테이블 WHERE 조건;", 
-                hint: "city='서울', age 30대, join_date가 20240229보다 큰 조건을 AND로 연결하세요.", 
-                question: `2024년 2월 29일 이후에 가입한 서울 지역의 30대 고객 명단을 추출하세요.\n(출력 컬럼: 모든 컬럼)`, 
-                solution: `SELECT *\nFROM Customers\nWHERE\n  1=1\n  AND city = '서울'\n  AND age BETWEEN 30 AND 39\n  AND join_date > '20240229'\n;`, 
+                hint: "city='서울', age 30대, join_date가 20260228보다 큰 조건을 AND로 연결하세요.", 
+                question: `2026년 2월 28일 이후에 가입한 서울 지역의 30대 고객 명단을 추출하세요.\n(출력 컬럼: 모든 컬럼)`, 
+                solution: `SELECT *\nFROM Customers\nWHERE\n  1=1\n  AND city = '서울'\n  AND age BETWEEN 30 AND 39\n  AND join_date > '20260228'\n;`, 
                 token: "XN-01-SUCC" 
             },
             { 
@@ -107,9 +107,9 @@
             { 
                 day: 3, title: "데이터 형 변환 및 필터", tables: ["Customers"], 
                 syntax: "CAST(컬럼 AS INTEGER), WHERE 조건", 
-                hint: "WHERE join_date > '20240303' 조건을 사용하여 필터링하고, SELECT에서 CAST를 사용하세요.", 
-                question: `2024년 3월 3일 이후에 가입한 고객의 이름(name)과 가입날짜(join_date)를 조회하세요. 단, 가입날짜는 숫자(INTEGER) 형태로 변환하여 출력하세요.\n(출력 컬럼: name, join_date_int)`, 
-                solution: `SELECT name, \n  CAST(join_date AS INTEGER) as join_date_int\nFROM Customers\nWHERE join_date > '20240303'\n;`, 
+                hint: "WHERE join_date > '20260303' 조건을 사용하여 필터링하고, SELECT에서 CAST를 사용하세요.", 
+                question: `2026년 3월 3일 이후에 가입한 고객의 이름(name)과 가입날짜(join_date)를 조회하세요. 단, 가입날짜는 숫자(INTEGER) 형태로 변환하여 출력하세요.\n(출력 컬럼: name, join_date_int)`, 
+                solution: `SELECT name, \n  CAST(join_date AS INTEGER) as join_date_int\nFROM Customers\nWHERE join_date > '20260303'\n;`, 
                 token: "XN-03-SUCC" 
             },
             { 
@@ -404,7 +404,7 @@
                         </main>
                     </div>
                     <footer className="bg-white border-t border-slate-200 p-8 text-slate-300 text-[10px] font-black uppercase tracking-[0.4em] text-center shrink-0 relative z-10">
-                        SQL Mastery Course v5.7 - Mission Date Filtering Added
+                        SQL Mastery Course v5.8 - 2026 Reality Update
                     </footer>
                 </div>
             );
