@@ -50,7 +50,7 @@
 
         const schemaData = {
             Customers: {
-                columns: ["고객ID", "이름", "나이", "지역", "가입일"],
+                columns: ["id", "name", "age", "city", "join_date"],
                 types: ["TEXT", "TEXT", "INTEGER", "TEXT", "DATE"],
                 samples: [
                     ["C-001", "김철수", 32, "서울", "2024-03-01"],
@@ -61,7 +61,7 @@
                 ]
             },
             Plans: {
-                columns: ["요금제ID", "요금제명", "월정액"],
+                columns: ["plan_id", "plan_name", "price"],
                 types: ["TEXT", "TEXT", "INTEGER"],
                 samples: [
                     ["P-01", "5G 무제한 95", 95000],
@@ -70,7 +70,7 @@
                 ]
             },
             Subscriptions: {
-                columns: ["가입ID", "고객ID", "요금제ID", "상태"],
+                columns: ["sub_id", "id", "plan_id", "status"],
                 types: ["TEXT", "TEXT", "TEXT", "TEXT"],
                 samples: [
                     ["S-101", "C-001", "P-01", "Active"],
@@ -79,7 +79,7 @@
                 ]
             },
             Usage: {
-                columns: ["고객ID", "매출액"],
+                columns: ["id", "sales"],
                 types: ["TEXT", "INTEGER"],
                 samples: [
                     ["C-001", 3500], ["C-002", 1200], ["C-004", 4200], ["C-005", 2800]
@@ -88,16 +88,16 @@
         };
 
         const curriculum = [
-            { day: 1, title: "데이터 필터링", tables: ["Customers"], syntax: "SELECT * FROM 테이블 WHERE 조건;", hint: "지역='서울', 나이 30~39, 가입일 '2024-03-01' 조건을 AND로 연결하세요.", question: "2024년 3월 1일 이후에 가입한 서울 지역의 30대 고객 명단을 추출하세요.\n(출력 컬럼: 모든 컬럼)", solution: `SELECT *\nFROM Customers\nWHERE\n  1=1\n  AND 지역 = '서울'\n  AND 나이 BETWEEN 30 AND 39\n  AND 가입일 >= '2024-03-01'\n;`, token: "XN-A1-82" },
-            { day: 2, title: "가공과 정렬", tables: ["Customers"], syntax: "CASE WHEN, ORDER BY DESC", hint: "나이가 30미만이면 '청년', 50미만이면 '중년', 나머지는 '장년'입니다.", question: "고객을 청년(30세 미만), 중년(30~49세), 장년(50세 이상)으로 분류하고 나이가 많은 순으로 정렬하세요.\n(출력 컬럼: 이름, 나이, 연령그룹)", solution: `SELECT 이름, 나이,\n  CASE WHEN 나이 < 30 THEN '청년'\n       WHEN 나이 < 50 THEN '중년'\n       ELSE '장년' END as 연령그룹\nFROM Customers\nORDER BY 나이 DESC\n;`, token: "XN-B2-19" },
-            { day: 3, title: "통계 요약", tables: ["Customers", "Usage"], syntax: "JOIN, GROUP BY, COUNT(DISTINCT), SUM", hint: "고객ID로 JOIN하고 지역별로 묶어 집계하세요.", question: "지역별 고객 수와 해당 지역의 총 매출액 합계를 계산하세요.\n(출력 컬럼: 지역, 고객수, 총매출)", solution: `SELECT \n  C.지역,\n  COUNT(DISTINCT C.고객ID) as 고객수,\n  SUM(U.매출액) as 총매출\nFROM Customers C\nJOIN Usage U ON C.고객ID = U.고객ID\nGROUP BY C.지역\n;`, token: "XN-C3-44" },
-            { day: 4, title: "다중 테이블 결합", tables: ["Customers", "Subscriptions", "Plans"], syntax: "3-WAY JOIN, WHERE", hint: "상태가 'Active'인 경우만 필터링하세요.", question: "각 고객이 현재 이용 중인 '요금제명' 정보를 매칭해서 보여주세요. (상태가 'Active'인 경우만).\n(출력 컬럼: 이름, 요금제명)", solution: `SELECT C.이름, P.요금제명\nFROM Customers C\nJOIN Subscriptions S ON C.고객ID = S.고객ID\nJOIN Plans P ON S.요금제ID = P.요금제ID\nWHERE\n  1=1\n  AND S.상태 = 'Active'\n;`, token: "XN-D4-50" },
-            { day: 5, title: "누락 데이터 식별", tables: ["Customers", "Subscriptions"], syntax: "LEFT JOIN, IFNULL, IS NULL", hint: "구독 정보가 없는 사람을 찾아야 하므로 LEFT JOIN이 필수입니다.", question: "전체 고객 중 요금제 미가입자를 찾아 요금제명을 '미가입'이라고 표시하세요.\n(출력 컬럼: 이름, 요금제정보)", solution: `SELECT C.이름, IFNULL(S.요금제ID, '미가입') as 요금제정보\nFROM Customers C\nLEFT JOIN Subscriptions S ON C.고객ID = S.고객ID\nWHERE\n  1=1\n  AND S.가입ID IS NULL\n;`, token: "XN-E5-07" },
-            { day: 6, title: "그룹 필터링", tables: ["Customers", "Usage"], syntax: "GROUP BY, HAVING", hint: "집계 결과에 필터를 걸 때는 HAVING을 사용합니다.", question: "평균 매출액이 2,000원 이상인 고가치 지역만 추출하세요.\n(출력 컬럼: 지역, 평균매출)", solution: `SELECT 지역, AVG(매출액) as 평균매출\nFROM Customers C\nJOIN Usage U ON C.고객ID = U.고객ID\nGROUP BY 지역\nHAVING\n  1=1\n  AND 평균매출 >= 2000\n;`, token: "XN-F6-12" },
-            { day: 7, title: "날짜 차이 계산", tables: ["Customers"], syntax: "JULIANDAY, CAST", hint: "2024-04-10일에서 가입일을 뺀 수치를 정수로 변환하세요.", question: "고객별로 가입한 지 며칠이 지났는지 계산하세요. (기준일: 2024-04-10)\n(출력 컬럼: 이름, 가입기간)", solution: `SELECT 이름, \n  CAST(JULIANDAY('2024-04-10') - JULIANDAY(가입일) AS INTEGER) as 가입기간\nFROM Customers\n;`, token: "XN-G7-28" },
-            { day: 8, title: "서브쿼리 마스터", tables: ["Customers", "Usage"], syntax: "WHERE 컬럼 IN (SELECT ...)", hint: "안쪽 쿼리에서 평균 매출액을 먼저 구하세요.", question: "전체 평균 매출액보다 더 많이 쓴 고객의 이름을 찾으세요.\n(출력 컬럼: 이름)", solution: `SELECT 이름\nFROM Customers\nWHERE\n  1=1\n  AND 고객ID IN (\n    SELECT 고객ID \n    FROM Usage \n    WHERE\n      1=1\n      AND 매출액 > (SELECT AVG(매출액) FROM Usage)\n  )\n;`, token: "XN-H8-90" },
-            { day: 9, title: "WITH절 가독성", tables: ["Usage"], syntax: "WITH 별칭 AS (SELECT ...)", hint: "CTE(WITH)를 사용하여 로직을 단계별로 정의하세요.", question: "매출 합계가 3,000원을 초과하면 'VIP', 아니면 '일반' 등급별 인원수를 구하세요.\n(출력 컬럼: 등급, 고객수)", solution: `WITH 매출요약 AS (\n  SELECT 고객ID, SUM(매출액) as 총매출 \n  FROM Usage \n  GROUP BY 1\n),\n등급부여 AS (\n  SELECT *, \n    CASE WHEN 총매출 > 3000 THEN 'VIP' ELSE '일반' END as 등급 \n  FROM 매출요약\n)\nSELECT 등급, COUNT(*) as 고객수\nFROM 등급부여\nGROUP BY 1\n;`, token: "XN-I9-33" },
-            { day: 10, title: "최종 실무 리포트", tables: ["Subscriptions", "Customers", "Plans"], syntax: "종합 JOIN & GROUP BY", hint: "Churned 상태인 데이터만 모아 지역과 요금제별로 집계하세요.", question: "해지(Churned)한 고객들의 지역별/요금제별 해지 건수를 분석하고 많은 순으로 나열하세요.\n(출력 컬럼: 지역, 요금제명, 해지건수)", solution: `SELECT \n  C.지역, \n  P.요금제명, \n  COUNT(*) as 해지건수\nFROM Subscriptions S\nJOIN Customers C ON S.고객ID = C.고객ID\nJOIN Plans P ON S.요금제ID = P.요금제ID\nWHERE\n  1=1\n  AND S.상태 = 'Churned'\nGROUP BY 1, 2\nORDER BY 3 DESC\n;`, token: "XN-Z0-99" }
+            { day: 1, title: "데이터 필터링", tables: ["Customers"], syntax: "SELECT * FROM 테이블 WHERE 조건;", hint: "city='서울', age 30~39, join_date '2024-03-01' 조건을 AND로 연결하세요.", question: "2024년 3월 1일 이후에 가입한 서울 지역의 30대 고객 명단을 추출하세요.\n(출력 컬럼: 모든 컬럼)", solution: `SELECT *\nFROM Customers\nWHERE\n  1=1\n  AND city = '서울'\n  AND age BETWEEN 30 AND 39\n  AND join_date >= '2024-03-01'\n;`, token: "XN-A1-82" },
+            { day: 2, title: "가공과 정렬", tables: ["Customers"], syntax: "CASE WHEN, ORDER BY DESC", hint: "나이가 30미만이면 '청년', 50미만이면 '중년', 나머지는 '장년'입니다.", question: "고객을 청년(30세 미만), 중년(30~49세), 장년(50세 이상)으로 분류하고 나이가 많은 순으로 정렬하세요.\n(출력 컬럼: name, age, age_group)", solution: `SELECT name, age,\n  CASE WHEN age < 30 THEN '청년'\n       WHEN age < 50 THEN '중년'\n       ELSE '장년' END as age_group\nFROM Customers\nORDER BY age DESC\n;`, token: "XN-B2-19" },
+            { day: 3, title: "통계 요약", tables: ["Customers", "Usage"], syntax: "JOIN, GROUP BY, COUNT(DISTINCT), SUM", hint: "id로 JOIN하고 city별로 묶어 집계하세요.", question: "지역별 고객 수와 해당 지역의 총 매출액 합계를 계산하세요.\n(출력 컬럼: city, user_cnt, total_sales)", solution: `SELECT \n  C.city,\n  COUNT(DISTINCT C.id) as user_cnt,\n  SUM(U.sales) as total_sales\nFROM Customers C\nJOIN Usage U ON C.id = U.id\nGROUP BY C.city\n;`, token: "XN-C3-44" },
+            { day: 4, title: "다중 테이블 결합", tables: ["Customers", "Subscriptions", "Plans"], syntax: "3-WAY JOIN, WHERE", hint: "status가 'Active'인 경우만 필터링하세요.", question: "각 고객이 현재 이용 중인 '요금제명' 정보를 매칭해서 보여주세요. (상태가 'Active'인 경우만).\n(출력 컬럼: name, plan_name)", solution: `SELECT C.name, P.plan_name\nFROM Customers C\nJOIN Subscriptions S ON C.id = S.id\nJOIN Plans P ON S.plan_id = P.plan_id\nWHERE\n  1=1\n  AND S.status = 'Active'\n;`, token: "XN-D4-50" },
+            { day: 5, title: "누락 데이터 식별", tables: ["Customers", "Subscriptions"], syntax: "LEFT JOIN, IFNULL, IS NULL", hint: "구독 정보가 없는 사람을 찾아야 하므로 LEFT JOIN이 필수입니다.", question: "전체 고객 중 요금제 미가입자를 찾아 요금제ID를 '미가입'이라고 표시하세요.\n(출력 컬럼: name, sub_info)", solution: `SELECT C.name, IFNULL(S.plan_id, '미가입') as sub_info\nFROM Customers C\nLEFT JOIN Subscriptions S ON C.id = S.id\nWHERE\n  1=1\n  AND S.sub_id IS NULL\n;`, token: "XN-E5-07" },
+            { day: 6, title: "그룹 필터링", tables: ["Customers", "Usage"], syntax: "GROUP BY, HAVING", hint: "집계 결과에 필터를 걸 때는 HAVING을 사용합니다.", question: "평균 매출액이 2,000원 이상인 고가치 지역만 추출하세요.\n(출력 컬럼: city, avg_sales)", solution: `SELECT city, AVG(sales) as avg_sales\nFROM Customers C\nJOIN Usage U ON C.id = U.id\nGROUP BY city\nHAVING\n  1=1\n  AND avg_sales >= 2000\n;`, token: "XN-F6-12" },
+            { day: 7, title: "날짜 차이 계산", tables: ["Customers"], syntax: "JULIANDAY, CAST", hint: "2024-04-10일에서 join_date를 뺀 수치를 정수로 변환하세요.", question: "고객별로 가입한 지 며칠이 지났는지 계산하세요. (기준일: 2024-04-10)\n(출력 컬럼: name, tenure_days)", solution: `SELECT name, \n  CAST(JULIANDAY('2024-04-10') - JULIANDAY(join_date) AS INTEGER) as tenure_days\nFROM Customers\n;`, token: "XN-G7-28" },
+            { day: 8, title: "서브쿼리 마스터", tables: ["Customers", "Usage"], syntax: "WHERE 컬럼 IN (SELECT ...)", hint: "안쪽 쿼리에서 평균 매출액을 먼저 구하세요.", question: "전체 평균 매출액보다 더 많이 쓴 고객의 이름을 찾으세요.\n(출력 컬럼: name)", solution: `SELECT name\nFROM Customers\nWHERE\n  1=1\n  AND id IN (\n    SELECT id \n    FROM Usage \n    WHERE\n      1=1\n      AND sales > (SELECT AVG(sales) FROM Usage)\n  )\n;`, token: "XN-H8-90" },
+            { day: 9, title: "WITH절 가독성", tables: ["Usage"], syntax: "WITH 별칭 AS (SELECT ...)", hint: "CTE(WITH)를 사용하여 로직을 단계별로 정의하세요.", question: "매출 합계가 3,000원을 초과하면 'VIP', 아니면 '일반' 등급별 인원수를 구하세요.\n(출력 컬럼: grade, user_cnt)", solution: `WITH sales_summary AS (\n  SELECT id, SUM(sales) as total_sales \n  FROM Usage \n  GROUP BY 1\n),\ngrade_assignment AS (\n  SELECT *, \n    CASE WHEN total_sales > 3000 THEN 'VIP' ELSE '일반' END as grade \n  FROM sales_summary\n)\nSELECT grade, COUNT(*) as user_cnt\nFROM grade_assignment\nGROUP BY 1\n;`, token: "XN-I9-33" },
+            { day: 10, title: "최종 실무 리포트", tables: ["Subscriptions", "Customers", "Plans"], syntax: "종합 JOIN & GROUP BY", hint: "Churned 상태인 데이터만 모아 지역과 요금제별로 집계하세요.", question: "해지(Churned)한 고객들의 지역별/요금제별 해지 건수를 분석하고 많은 순으로 나열하세요.\n(출력 컬럼: city, plan_name, churn_cnt)", solution: `SELECT \n  C.city, \n  P.plan_name, \n  COUNT(*) as churn_cnt\nFROM Subscriptions S\nJOIN Customers C ON S.id = C.id\nJOIN Plans P ON S.plan_id = P.plan_id\nWHERE\n  1=1\n  AND S.status = 'Churned'\nGROUP BY 1, 2\nORDER BY 3 DESC\n;`, token: "XN-Z0-99" }
         ];
 
         function ResultTable({ data, title }) {
@@ -335,7 +335,7 @@
                         </main>
                     </div>
                     <footer className="bg-white border-t p-8 text-slate-300 text-[10px] font-black uppercase tracking-[0.4em] text-center shrink-0">
-                        SQL Mastery Course v4.4 - Fixed Layout Overlap
+                        SQL Mastery Course v4.5 - English Columns & Result View Enhanced
                     </footer>
                 </div>
             );
