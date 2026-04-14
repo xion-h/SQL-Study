@@ -19,6 +19,7 @@
         button:disabled { cursor: not-allowed; opacity: 0.5; }
         .animate-fade { animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .break-keep { word-break: keep-all; }
     </style>
 </head>
 <body>
@@ -92,15 +93,15 @@
                 day: 1, title: "데이터 필터링", tables: ["Customers"], 
                 syntax: "SELECT * FROM 테이블 WHERE 조건;", 
                 hint: "city='서울', age 30대, join_date가 20260228보다 큰 조건을 AND로 연결하세요.", 
-                question: `마케팅팀에서 2026년 2월 28일 이후에 가입한 서울 지역의 30대 고객 명단을 알고 싶어 합니다.\n(출력 컬럼: 모든 컬럼)`, 
+                question: `[사업팀] 마케팅 캠페인 대상을 선정하기 위해, 2026년 2월 28일 이후에 가입한 서울 지역의 30대 고객 명단을 알고 싶어 합니다.\n(출력 컬럼: 모든 컬럼)`, 
                 solution: `SELECT *\nFROM Customers\nWHERE\n  1=1\n  AND city = '서울'\n  AND age BETWEEN 30 AND 39\n  AND join_date > '20260228'\n;`, 
                 token: "XN_01_SUCC" 
             },
             { 
                 day: 2, title: "가공과 정렬", tables: ["Customers"], 
                 syntax: "CASE WHEN, ORDER BY DESC", 
-                hint: "나이가 30미만이면 '청년', 50미만이면 '중년', 나머지는 '장년'입니다.", 
-                question: `고객들을 연령별(청년, 중년, 장년)로 분류하고, 나이가 많은 순으로 정렬된 데이터를 확인하고 싶습니다.\n(출력 컬럼: name, age, age_group)`, 
+                hint: "나이 < 30 (청년), 나이 < 50 (중년), 그 외 (장년) 조건을 CASE WHEN으로 작성하세요.", 
+                question: `[영업팀] 고객별 타겟 영업을 위해 고객을 청년(30세 미만), 중년(30세~49세), 장년(50세 이상)으로 분류하고, 나이가 많은 순으로 정렬된 리스트를 요청했습니다.\n(출력 컬럼: name, age, age_group)`, 
                 solution: `SELECT name, age,\n  CASE WHEN age < 30 THEN '청년'\n       WHEN age < 50 THEN '중년'\n       ELSE '장년' END as age_group\nFROM Customers\nORDER BY age DESC\n;`, 
                 token: "XN_02_SUCC" 
             },
@@ -108,7 +109,7 @@
                 day: 3, title: "데이터 형 변환 및 필터", tables: ["Customers"], 
                 syntax: "CAST(컬럼 AS INTEGER), WHERE 조건", 
                 hint: "WHERE join_date > '20260303' 조건을 사용하고, SELECT 절에서 CAST를 적용하세요.", 
-                question: `2026년 3월 3일 이후에 가입한 고객들의 이름(name)과 숫자 형태(INTEGER)로 변환된 가입날짜를 알고 싶습니다.\n(출력 컬럼: name, join_date_int)`, 
+                question: `[고객유지팀] 최근 프로모션 대상 확인을 위해, 2026년 3월 3일 이후에 가입한 고객들의 이름과 숫자 형태(INTEGER)로 변환된 가입날짜 데이터를 확인하려 합니다.\n(출력 컬럼: name, join_date_int)`, 
                 solution: `SELECT name, \n  CAST(join_date AS INTEGER) as join_date_int\nFROM Customers\nWHERE join_date > '20260303'\n;`, 
                 token: "XN_03_SUCC" 
             },
@@ -116,7 +117,7 @@
                 day: 4, title: "다중 테이블 결합", tables: ["Customers", "Subscriptions", "Plans"], 
                 syntax: "3-WAY JOIN, WHERE", 
                 hint: "status가 'Active'인 경우만 필터링하세요.", 
-                question: `현재 이용 중인 요금제 상태가 'Active'인 고객들의 이름과 해당 요금제 명칭을 매칭해서 보고 싶습니다.\n(출력 컬럼: name, plan_name)`, 
+                question: `[상품팀] 현재 활성화(Active)된 요금제를 이용 중인 고객들의 이름과 해당 요금제 명칭을 매칭하여 인기 요금제 현황을 보고 싶어 합니다.\n(출력 컬럼: name, plan_name)`, 
                 solution: `SELECT C.name, P.plan_name\nFROM Customers C\nJOIN Subscriptions S ON C.id = S.id\nJOIN Plans P ON S.plan_id = P.plan_id\nWHERE\n  1=1\n  AND S.status = 'Active'\n;`, 
                 token: "XN_04_SUCC" 
             },
@@ -124,7 +125,7 @@
                 day: 5, title: "통계 요약", tables: ["Customers", "Usage"], 
                 syntax: "JOIN, GROUP BY, COUNT(DISTINCT), SUM", 
                 hint: "id로 JOIN하고 city별로 묶어 집계하세요.", 
-                question: `각 지역별로 실제 서비스 이용 고객 수와 발생한 총 매출액 합계를 분석하고 싶습니다.\n(출력 컬럼: city, user_cnt, total_sales)`, 
+                question: `[사업팀] 지역별 마케팅 효율 측정을 위해 각 지역별 실이용 고객 수와 총 매출액 합계를 분석하고 싶습니다.\n(출력 컬럼: city, user_cnt, total_sales)`, 
                 solution: `SELECT \n  C.city,\n  COUNT(DISTINCT C.id) as user_cnt,\n  SUM(U.sales) as total_sales\nFROM Customers C\nJOIN Usage U ON C.id = U.id\nGROUP BY C.city\n;`, 
                 token: "XN_05_SUCC" 
             },
@@ -132,7 +133,7 @@
                 day: 6, title: "조건별 등급 산정", tables: ["Plans"], 
                 syntax: "CASE WHEN ... THEN ... ELSE ... END", 
                 hint: "가격(price)이 80,000원 이상이면 'Premium'으로 분류하세요.", 
-                question: `각 요금제의 명칭과 함께, 가격이 80,000원 이상인 상품은 'Premium' 아니면 'Basic'으로 구분된 등급표를 알고 싶습니다.\n(출력 컬럼: plan_name, price_grade)`, 
+                question: `[영업팀] 요금제 상향 판매(Upselling)를 위해 요금제 가격이 80,000원 이상이면 'Premium', 아니면 'Basic'으로 구분된 상품 등급표를 알고 싶습니다.\n(출력 컬럼: plan_name, price_grade)`, 
                 solution: `SELECT plan_name, \n  CASE WHEN price >= 80000 THEN 'Premium' \n       ELSE 'Basic' END as price_grade\nFROM Plans\n;`, 
                 token: "XN_06_SUCC" 
             },
@@ -140,7 +141,7 @@
                 day: 7, title: "그룹 필터링", tables: ["Customers", "Usage"], 
                 syntax: "GROUP BY, HAVING", 
                 hint: "평균 매출액이 2000원 이상인 조건은 HAVING 절에 써야 합니다.", 
-                question: `평균 매출액이 2,000원 이상인 '고가치 지역'이 어디인지 알고 싶습니다.\n(출력 컬럼: city, avg_sales)`, 
+                question: `[사업팀] 마케팅 리소스를 집중 투여하기 위해, 평균 매출액이 2,000원 이상인 '고가치 지역' 리스트를 확인하고 싶습니다.\n(출력 컬럼: city, avg_sales)`, 
                 solution: `SELECT city, AVG(sales) as avg_sales\nFROM Customers C\nJOIN Usage U ON C.id = U.id\nGROUP BY city\nHAVING avg_sales >= 2000\n;`, 
                 token: "XN_07_SUCC" 
             },
@@ -148,7 +149,7 @@
                 day: 8, title: "서브쿼리 기초", tables: ["Customers", "Usage"], 
                 syntax: "SELECT ... FROM 테이블 JOIN (SELECT ...) ON ...", 
                 hint: "Usage 테이블에서 sales > 3000인 데이터를 먼저 서브쿼리로 추출하세요.", 
-                question: `한 번이라도 매출액이 3,000원을 초과한 적이 있는 고객들의 이름과 그 매출 금액을 한눈에 보고 싶습니다.\n(출력 컬럼: name, sales)`, 
+                question: `[사업팀] 핵심 고객 관리를 위해 매출액이 3,000원을 초과한 적이 있는 고객들의 이름과 해당 매출액을 요청했습니다.\n(출력 컬럼: name, sales)`, 
                 solution: `SELECT name, sales\nFROM Customers C\nJOIN (\n  SELECT id, sales \n  FROM Usage \n  WHERE sales > 3000\n) U ON C.id = U.id\n;`, 
                 token: "XN_08_SUCC" 
             },
@@ -156,7 +157,7 @@
                 day: 9, title: "WITH절 활용 (CTE)", tables: ["Usage", "Customers"], 
                 syntax: "WITH 별칭 AS (SELECT ...)", 
                 hint: "Day 8의 서브쿼리 부분을 맨 위로 올려서 'WITH high_sales AS (...)'로 정의하세요.", 
-                question: `Day 08과 같은 결과가 나오도록 하되, 이번에는 WITH 구문을 사용하여 쿼리의 가독성을 높여보고 싶습니다.\n(출력 컬럼: name, sales)`, 
+                question: `[고객유지팀] 유지 전략 보고서 작성을 위해 Day 08과 같은 결과를 추출하되, 가독성을 높이기 위해 WITH 구문을 사용하여 쿼리를 재작성하고 싶습니다.\n(출력 컬럼: name, sales)`, 
                 solution: `WITH high_sales AS (\n  SELECT id, sales \n  FROM Usage \n  WHERE sales > 3000\n)\nSELECT C.name, H.sales\nFROM Customers C\nJOIN high_sales H ON C.id = H.id\n;`, 
                 token: "XN_09_SUCC" 
             },
@@ -164,7 +165,7 @@
                 day: 10, title: "최종 실무 리포트", tables: ["Subscriptions", "Customers", "Plans"], 
                 syntax: "종합 JOIN & GROUP BY", 
                 hint: "status = 'Churned'인 데이터만 필터링하여 지역과 요금제별로 묶으세요.", 
-                question: `서비스를 해지(Churned)한 고객들이 어느 지역에서, 어떤 요금제를 주로 썼는지 해지 건수 통계를 알고 싶습니다.\n(출력 컬럼: city, plan_name, churn_cnt)`, 
+                question: `[고객유지팀] 해지 원인 분석을 위해 서비스를 해지(Churned)한 고객들이 어느 지역에서, 어떤 요금제를 주로 썼는지 해지 건수 통계 리포트를 알고 싶어 합니다.\n(출력 컬럼: city, plan_name, churn_cnt)`, 
                 solution: `SELECT \n  C.city, \n  P.plan_name, \n  COUNT(*) as churn_cnt\nFROM Subscriptions S\nJOIN Customers C ON S.id = C.id\nJOIN Plans P ON S.plan_id = P.plan_id\nWHERE\n  1=1\n  AND S.status = 'Churned'\nGROUP BY 1, 2\nORDER BY 3 DESC\n;`, 
                 token: "XN_10_SUCC" 
             }
@@ -234,20 +235,17 @@
 
                 if (lowerMsg.includes("unrecognized token")) {
                     if (userQuery.includes("'") && (userQuery.split("'").length - 1) % 2 !== 0) {
-                        return `[따옴표 쌍 오류] 문법 어딘가에 홑따옴표(') 하나가 짝 없이 남겨져 있습니다. 모든 문자열 값이 시작과 끝에 따옴표 쌍을 제대로 갖췄는지 확인해 보세요. (예: city = '서울')`;
+                        return `[따옴표 쌍 오류] 문법 어딘가에 홑따옴표(') 하나가 짝 없이 남겨져 있습니다. 문자열 값이 시작과 끝에 따옴표 쌍을 제대로 갖췄는지 확인해 보세요.`;
                     }
-                    if (userQuery.includes("'") && userQuery.includes(" ;")) {
-                        return `[문법 오류] 세미콜론(;) 바로 앞에 따옴표(')나 잘못된 기호가 있는지 확인하세요.`;
-                    }
-                    return `[구문 오류] SQL 엔진이 이해할 수 없는 기호가 포함되어 있습니다. 오타나 불필요한 따옴표가 없는지 확인하세요.`;
+                    return `[구문 오류] SQL 엔진이 이해할 수 없는 기호가 포함되어 있습니다. 불필요한 따옴표나 오타가 없는지 확인하세요.`;
                 }
 
                 if (lowerMsg.includes("no such column")) {
                     const col = errorMsg.split(": ")[1];
                     if (userQuery.includes('`') || userQuery.includes('"')) {
-                        return `[따옴표 오류] '${col}'라는 컬럼을 찾을 수 없습니다. SQL에서 문자열(값)을 입력할 때는 백틱(\`)이나 쌍따옴표(")가 아닌 홑따옴표(')를 사용해야 합니다. (예: city = '서울')`;
+                        return `[따옴표 오류] '\${col}'라는 컬럼을 찾을 수 없습니다. SQL에서 문자열(값)을 입력할 때는 백틱(\`)이나 쌍따옴표(")가 아닌 홑따옴표(')를 사용해야 합니다.`;
                     }
-                    return `[컬럼 오류] '${col}'라는 이름의 컬럼이 테이블에 존재하지 않습니다. 컬럼명 오타가 없는지, 혹은 값(Value)을 따옴표 없이 입력하지 않았는지 확인하세요.`;
+                    return `[컬럼 오류] '\${col}'라는 이름의 컬럼이 테이블에 존재하지 않습니다. 컬럼명 오타가 없는지, 혹은 값(Value)을 따옴표 없이 입력하지 않았는지 확인하세요.`;
                 }
                 
                 if (lowerMsg.includes("syntax error")) {
@@ -283,10 +281,10 @@
                         const aRows = answerRes[0].values;
 
                         if (uCols.length !== aCols.length) {
-                            setErrorReason(`정보(컬럼) 선택이 잘못되었습니다. 정답은 ${aCols.length}개의 열을 보여주어야 하지만, 현재 ${uCols.length}개의 열만 출력되었습니다. 지문의 '(출력 컬럼: ...)' 내용을 다시 확인해 주세요.`);
+                            setErrorReason(`정보(컬럼) 선택이 잘못되었습니다. 정답은 \${aCols.length}개의 열을 보여주어야 하지만, 현재 \${uCols.length}개의 열만 출력되었습니다. 지문의 '(출력 컬럼: ...)' 내용을 다시 확인해 주세요.`);
                             setIsCorrect(false);
                         } else if (uValues.length !== aRows.length) {
-                            setErrorReason(`데이터 건수(행)가 정답과 다릅니다. 필터(WHERE) 조건을 확인해 주세요. 정답은 ${aRows.length}건이 나와야 하지만, 현재 ${uValues.length}건이 출력되었습니다.`);
+                            setErrorReason(`데이터 건수(행)가 정답과 다릅니다. 필터(WHERE) 조건을 확인해 주세요. 정답은 \${aRows.length}건이지만, 현재 \${uValues.length}건이 출력되었습니다.`);
                             setIsCorrect(false);
                         } else {
                             const normalizeRowValues = (row) => [...row].sort((a, b) => String(a).localeCompare(String(b)));
@@ -454,7 +452,7 @@
                         </main>
                     </div>
                     <footer className="bg-white border-t border-slate-200 p-8 text-slate-300 text-[10px] font-black uppercase tracking-[0.4em] text-center shrink-0 relative z-10">
-                        SQL Mastery Course v6.7 - Word-Level Wrapping & Table Consistency
+                        SQL Mastery Course v6.8 - Business Context & Logic Enhanced
                     </footer>
                 </div>
             );
