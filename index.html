@@ -132,7 +132,7 @@
                 day: 6, title: "조건별 등급 산정", tables: ["Plans"], 
                 syntax: "CASE WHEN ... THEN ... ELSE ... END", 
                 hint: "가격(price)이 80,000원 이상이면 'Premium'으로 분류하세요.", 
-                question: `각 요금제의 명칭과 함께, 가격이 80,000원 이상이면 'Premium' 아니면 'Basic'으로 구분된 등급표를 알고 싶습니다.\n(출력 컬럼: plan_name, price_grade)`, 
+                question: `각 요금제의 명칭과 함께, 가격이 80,000원 이상인 상품은 'Premium' 아니면 'Basic'으로 구분된 등급표를 알고 싶습니다.\n(출력 컬럼: plan_name, price_grade)`, 
                 solution: `SELECT plan_name, \n  CASE WHEN price >= 80000 THEN 'Premium' \n       ELSE 'Basic' END as price_grade\nFROM Plans\n;`, 
                 token: "XN_06_SUCC" 
             },
@@ -183,7 +183,6 @@
                             <tbody>{data.values.map((row, i) => (
                                 <tr key={i} className="border-b last:border-0 hover:bg-slate-50 transition-colors">
                                     {row.map((val, j) => {
-                                        // Alignment Logic: Number -> Left, String -> Right
                                         const alignClass = typeof val === 'number' ? 'text-left' : 'text-right';
                                         return (
                                             <td key={j} className={`px-3 py-2 font-mono text-slate-600 whitespace-nowrap ${alignClass}`}>
@@ -227,15 +226,28 @@
             }, []);
 
             const getFriendlyErrorMessage = (errorMsg) => {
-                if (errorMsg.includes("no such column")) {
+                const lowerMsg = errorMsg.toLowerCase();
+                
+                // Unrecognized token detection (Quote mismatch)
+                if (lowerMsg.includes("unrecognized token")) {
+                    if (userQuery.includes("'") && (userQuery.split("'").length - 1) % 2 !== 0) {
+                        return `[따옴표 쌍 오류] 문법 어딘가에 홑따옴표(') 하나가 짝 없이 남겨져 있습니다. 모든 문자열 값이 시작과 끝에 따옴표 쌍을 제대로 갖췄는지 확인해 보세요. (예: city = '서울')`;
+                    }
+                    if (userQuery.includes("'") && userQuery.includes(" ;")) {
+                        return `[문법 오류] 세미콜론(;) 바로 앞에 따옴표(')나 잘못된 기호가 있는지 확인하세요.`;
+                    }
+                    return `[구문 오류] SQL 엔진이 이해할 수 없는 기호가 포함되어 있습니다. 오타나 불필요한 따옴표가 없는지 확인하세요.`;
+                }
+
+                if (lowerMsg.includes("no such column")) {
                     const col = errorMsg.split(": ")[1];
-                    // Logic Diagnosis for Quotes
                     if (userQuery.includes('`') || userQuery.includes('"')) {
                         return `[따옴표 오류] '${col}'라는 컬럼을 찾을 수 없습니다. SQL에서 문자열(값)을 입력할 때는 백틱(\`)이나 쌍따옴표(")가 아닌 홑따옴표(')를 사용해야 합니다. (예: city = '서울')`;
                     }
-                    return `[컬럼 오류] '${col}'라는 이름의 컬럼이 테이블에 존재하지 않습니다. 오타가 없는지 혹은 홑따옴표를 빠뜨리지 않았는지 확인하세요.`;
+                    return `[컬럼 오류] '${col}'라는 이름의 컬럼이 테이블에 존재하지 않습니다. 컬럼명 오타가 없는지, 혹은 값(Value)을 따옴표 없이 입력하지 않았는지 확인하세요.`;
                 }
-                if (errorMsg.includes("syntax error")) {
+                
+                if (lowerMsg.includes("syntax error")) {
                     return `[문법 오류] 쿼리 문법이 올바르지 않습니다. 쉼표(,) 누락이나 구문의 순서를 확인하세요.`;
                 }
                 return errorMsg;
@@ -433,7 +445,7 @@
                         </main>
                     </div>
                     <footer className="bg-white border-t border-slate-200 p-8 text-slate-300 text-[10px] font-black uppercase tracking-[0.4em] text-center shrink-0 relative z-10">
-                        SQL Mastery Course v6.0 - Advanced Error Diagnosis & UI Update
+                        SQL Mastery Course v6.1 - Quote Mismatch Diagnosis Enhanced
                     </footer>
                 </div>
             );
