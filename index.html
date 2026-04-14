@@ -174,18 +174,18 @@
             if (!data) return null;
             return (
                 <div className="mt-4 border rounded-xl overflow-hidden bg-white shadow-sm border-slate-200 animate-fade text-left">
-                    <div className="bg-slate-800 text-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest">{title}</div>
+                    <div className="bg-slate-800 text-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-center">{title}</div>
                     <div className="overflow-x-auto custom-scrollbar">
                         <table className="w-full text-[11px] text-left border-collapse">
                             <thead><tr className="bg-slate-50 border-b">
-                                {data.columns.map(c => <th key={c} className="px-3 py-2 font-bold text-slate-500 uppercase whitespace-nowrap">{c}</th>)}
+                                {data.columns.map(c => <th key={c} className="px-3 py-2 font-bold text-slate-500 uppercase whitespace-nowrap text-center border-x border-slate-200">{c}</th>)}
                             </tr></thead>
                             <tbody>{data.values.map((row, i) => (
                                 <tr key={i} className="border-b last:border-0 hover:bg-slate-50 transition-colors">
                                     {row.map((val, j) => {
                                         const alignClass = typeof val === 'number' ? 'text-left' : 'text-right';
                                         return (
-                                            <td key={j} className={`px-3 py-2 font-mono text-slate-600 whitespace-nowrap ${alignClass}`}>
+                                            <td key={j} className={`px-3 py-2 font-mono text-slate-600 whitespace-nowrap ${alignClass} border-x border-slate-100`}>
                                                 {val === null ? 'null' : String(val)}
                                             </td>
                                         );
@@ -228,7 +228,6 @@
             const getFriendlyErrorMessage = (errorMsg) => {
                 const lowerMsg = errorMsg.toLowerCase();
                 
-                // Unrecognized token detection (Quote mismatch)
                 if (lowerMsg.includes("unrecognized token")) {
                     if (userQuery.includes("'") && (userQuery.split("'").length - 1) % 2 !== 0) {
                         return `[따옴표 쌍 오류] 문법 어딘가에 홑따옴표(') 하나가 짝 없이 남겨져 있습니다. 모든 문자열 값이 시작과 끝에 따옴표 쌍을 제대로 갖췄는지 확인해 보세요. (예: city = '서울')`;
@@ -276,7 +275,7 @@
                         const aRows = answerRes[0].values;
 
                         if (uCols.length !== aCols.length) {
-                            setErrorReason(`정보(컬럼) 선택이 잘못되었습니다. 정답은 ${aCols.length}개의 열을 보여주어야 하지만, 현재 ${uCols.length}개의 열만 출력되었습니다.`);
+                            setErrorReason(`정보(컬럼) 선택이 잘못되었습니다. 정답은 ${aCols.length}개의 열을 보여주어야 하지만, 현재 ${uCols.length}개의 열만 출력되었습니다. 지문의 '(출력 컬럼: ...)' 내용을 다시 확인해 주세요.`);
                             setIsCorrect(false);
                         } else if (uValues.length !== aRows.length) {
                             setErrorReason(`데이터 건수(행)가 정답과 다릅니다. 필터(WHERE) 조건을 확인해 주세요. 정답은 ${aRows.length}건이지만, 현재 ${uValues.length}건이 출력되었습니다.`);
@@ -401,11 +400,13 @@
                                                 </span>
                                                 <div className="overflow-x-auto custom-scrollbar text-left">
                                                     <table className="w-full text-[8px] text-left">
-                                                        <thead><tr className="border-b text-slate-400 font-bold">{schemaData[name].columns.map(c => <th key={c} className="px-1 py-1 uppercase text-left">{c}</th>)}</tr></thead>
+                                                        <thead><tr className="border-b text-slate-400 font-bold">
+                                                            {schemaData[name].columns.map(c => <th key={c} className="px-1 py-1 uppercase text-center border-x border-slate-100">{c}</th>)}
+                                                        </tr></thead>
                                                         <tbody>{schemaData[name].samples.map((row, i) => <tr key={i} className="border-b border-slate-50 last:border-0">
                                                             {row.map((val, j) => {
                                                                 const alignClass = typeof val === 'number' ? 'text-left' : 'text-right';
-                                                                return <td key={j} className={`px-1 py-1 font-mono text-slate-500 whitespace-nowrap ${alignClass}`}>{String(val)}</td>;
+                                                                return <td key={j} className={`px-1 py-1 font-mono text-slate-500 whitespace-nowrap \${alignClass} border-x border-slate-50`}>{String(val)}</td>;
                                                             })}
                                                         </tr>)}</tbody>
                                                     </table>
@@ -445,7 +446,7 @@
                         </main>
                     </div>
                     <footer className="bg-white border-t border-slate-200 p-8 text-slate-300 text-[10px] font-black uppercase tracking-[0.4em] text-center shrink-0 relative z-10">
-                        SQL Mastery Course v6.1 - Quote Mismatch Diagnosis Enhanced
+                        SQL Mastery Course v6.3 - Vertical Grid Enhanced
                     </footer>
                 </div>
             );
