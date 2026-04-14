@@ -183,7 +183,6 @@
                             <tbody>{data.values.map((row, i) => (
                                 <tr key={i} className="border-b last:border-0 hover:bg-slate-50 transition-colors">
                                     {row.map((val, j) => {
-                                        // Alignment Logic: Number -> Left, String -> Right
                                         const alignClass = typeof val === 'number' ? 'text-left' : 'text-right';
                                         return (
                                             <td key={j} className={`px-3 py-2 font-mono text-slate-600 whitespace-nowrap ${alignClass} border-x border-slate-100`}>
@@ -229,22 +228,23 @@
             const getFriendlyErrorMessage = (errorMsg) => {
                 const lowerMsg = errorMsg.toLowerCase();
                 
+                if (lowerMsg === "missing semicolon") {
+                    return `[마침표 오류] SQL 문장 끝에 세미콜론(;)이 없습니다. SQL의 마침표인 세미콜론을 정확히 찍었는지 확인해 보세요.`;
+                }
+
                 if (lowerMsg.includes("unrecognized token")) {
                     if (userQuery.includes("'") && (userQuery.split("'").length - 1) % 2 !== 0) {
-                        return `[따옴표 쌍 오류] 문법 어딘가에 홑따옴표(') 하나가 짝 없이 남겨져 있습니다. 모든 문자열 값이 시작과 끝에 따옴표 쌍을 제대로 갖췄는지 확인해 보세요. (예: city = '서울')`;
+                        return `[따옴표 쌍 오류] 문법 어딘가에 홑따옴표(') 하나가 짝 없이 남겨져 있습니다. 문자열 값이 시작과 끝에 따옴표 쌍을 제대로 갖췄는지 확인해 보세요.`;
                     }
-                    if (userQuery.includes("'") && userQuery.includes(" ;")) {
-                        return `[문법 오류] 세미콜론(;) 바로 앞에 따옴표(')나 잘못된 기호가 있는지 확인하세요.`;
-                    }
-                    return `[구문 오류] SQL 엔진이 이해할 수 없는 기호가 포함되어 있습니다. 오타나 불필요한 따옴표가 없는지 확인하세요.`;
+                    return `[구문 오류] SQL 엔진이 이해할 수 없는 기호가 포함되어 있습니다. 불필요한 따옴표나 오타가 없는지 확인하세요.`;
                 }
 
                 if (lowerMsg.includes("no such column")) {
                     const col = errorMsg.split(": ")[1];
                     if (userQuery.includes('`') || userQuery.includes('"')) {
-                        return `[따옴표 오류] '${col}'라는 컬럼을 찾을 수 없습니다. SQL에서 문자열(값)을 입력할 때는 백틱(\`)이나 쌍따옴표(")가 아닌 홑따옴표(')를 사용해야 합니다. (예: city = '서울')`;
+                        return `[따옴표 오류] '${col}'라는 컬럼을 찾을 수 없습니다. SQL에서 문자열(값)을 입력할 때는 백틱(\`)이나 쌍따옴표(")가 아닌 홑따옴표(')를 사용해야 합니다.`;
                     }
-                    return `[컬럼 오류] '${col}'라는 이름의 컬럼이 테이블에 존재하지 않습니다. 컬럼명 오타가 없는지, 혹은 값(Value)을 따옴표 없이 입력하지 않았는지 확인하세요.`;
+                    return `[컬럼 오류] '${col}'라는 이름의 컬럼이 테이블에 존재하지 않습니다. 컬럼명 오타나 값 입력 시 따옴표 누락 여부를 확인하세요.`;
                 }
                 
                 if (lowerMsg.includes("syntax error")) {
@@ -263,6 +263,11 @@
                         setIsCorrect(false);
                         return;
                     }
+
+                    // Strict Semicolon Check
+                    if (!cleanedQuery.endsWith(';')) {
+                        throw new Error("missing semicolon");
+                    }
                     
                     const active = curriculum.find(c => c.day === currentDay) || curriculum[0];
                     const answerRes = db.exec(active.solution);
@@ -276,10 +281,10 @@
                         const aRows = answerRes[0].values;
 
                         if (uCols.length !== aCols.length) {
-                            setErrorReason(`정보(컬럼) 선택이 잘못되었습니다. 정답은 ${aCols.length}개의 열을 보여주어야 하지만, 현재 ${uCols.length}개의 열만 출력되었습니다. 지문의 '(출력 컬럼: ...)' 내용을 다시 확인해 주세요.`);
+                            setErrorReason(`정보(컬럼) 선택이 잘못되었습니다. 정답은 ${aCols.length}개의 열을 보여주어야 하지만, 현재 ${uCols.length}개의 열만 출력되었습니다.`);
                             setIsCorrect(false);
                         } else if (uValues.length !== aRows.length) {
-                            setErrorReason(`데이터 건수(행)가 정답과 다릅니다. 필터(WHERE) 조건을 확인해 주세요. 정답은 ${aRows.length}건이 나와야 하지만, 현재 ${uValues.length}건이 출력되었습니다.`);
+                            setErrorReason(`데이터 건수(행)가 정답과 다릅니다. 필터(WHERE) 조건을 확인해 주세요. 정답은 ${aRows.length}건이지만, 현재 ${uValues.length}건이 출력되었습니다.`);
                             setIsCorrect(false);
                         } else {
                             const normalizeRowValues = (row) => [...row].sort((a, b) => String(a).localeCompare(String(b)));
@@ -407,7 +412,7 @@
                                                         <tbody>{schemaData[name].samples.map((row, i) => <tr key={i} className="border-b border-slate-50 last:border-0">
                                                             {row.map((val, j) => {
                                                                 const alignClass = typeof val === 'number' ? 'text-left' : 'text-right';
-                                                                return <td key={j} className={`px-1 py-1 font-mono text-slate-500 whitespace-nowrap ${alignClass} border-x border-slate-100`}>{String(val)}</td>;
+                                                                return <td key={j} className={`px-1 py-1 font-mono text-slate-500 whitespace-nowrap ${alignClass} border-x border-slate-50`}>{String(val)}</td>;
                                                             })}
                                                         </tr>)}</tbody>
                                                     </table>
@@ -447,7 +452,7 @@
                         </main>
                     </div>
                     <footer className="bg-white border-t border-slate-200 p-8 text-slate-300 text-[10px] font-black uppercase tracking-[0.4em] text-center shrink-0 relative z-10">
-                        SQL Mastery Course v6.5 - Data Visual Grid & Alignment Unified
+                        SQL Mastery Course v6.6 - Strict Semicolon Enforcement
                     </footer>
                 </div>
             );
