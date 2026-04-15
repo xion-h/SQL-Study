@@ -228,6 +228,7 @@
 
             const getFriendlyErrorMessage = (errorMsg) => {
                 const lowerMsg = errorMsg.toLowerCase();
+                const userQueryLower = userQuery.toLowerCase();
                 
                 if (lowerMsg === "missing semicolon") {
                     return `[마침표 오류] SQL 문장 끝에 세미콜론(;)이 없습니다. SQL의 마침표인 세미콜론을 정확히 찍었는지 확인해 보세요.`;
@@ -235,17 +236,17 @@
 
                 if (lowerMsg.includes("unrecognized token")) {
                     if (userQuery.includes("'") && (userQuery.split("'").length - 1) % 2 !== 0) {
-                        return `[따옴표 쌍 오류] 문법 어딘가에 홑따옴표(') 하나가 짝 없이 남겨져 있습니다. 문자열 값이 시작과 끝에 따옴표 쌍을 제대로 갖췄는지 확인해 보세요.`;
+                        return `[따옴표 쌍 오류] 문법 어딘가에 홑따옴표(') 하나가 짝 없이 남겨져 있습니다. 모든 문자열 값이 시작과 끝에 따옴표 쌍을 제대로 갖췄는지 확인해 보세요.`;
                     }
-                    return `[구문 오류] SQL 엔진이 이해할 수 없는 기호가 포함되어 있습니다. 불필요한 따옴표나 오타가 없는지 확인하세요.`;
+                    return `[구문 오류] SQL 엔진이 이해할 수 없는 기호가 포함되어 있습니다. 오타나 불필요한 따옴표가 없는지 확인하세요.`;
                 }
 
                 if (lowerMsg.includes("no such column")) {
                     const col = errorMsg.split(": ")[1];
                     if (userQuery.includes('`') || userQuery.includes('"')) {
-                        return `[따옴표 오류] '\${col}'라는 컬럼을 찾을 수 없습니다. SQL에서 문자열(값)을 입력할 때는 백틱(\`)이나 쌍따옴표(")가 아닌 홑따옴표(')를 사용해야 합니다.`;
+                        return `[따옴표 오류] '${col}'라는 컬럼을 찾을 수 없습니다. SQL에서 문자열(값)을 입력할 때는 백틱(\`)이나 쌍따옴표(")가 아닌 홑따옴표(')를 사용해야 합니다.`;
                     }
-                    return `[컬럼 오류] '\${col}'라는 이름의 컬럼이 테이블에 존재하지 않습니다. 컬럼명 오타가 없는지, 혹은 값(Value)을 따옴표 없이 입력하지 않았는지 확인하세요.`;
+                    return `[컬럼 오류] '${col}'라는 이름의 컬럼이 테이블에 존재하지 않습니다. 컬럼명 오타가 없는지, 혹은 값(Value)을 따옴표 없이 입력하지 않았는지 확인하세요.`;
                 }
                 
                 if (lowerMsg.includes("syntax error")) {
@@ -281,10 +282,18 @@
                         const aRows = answerRes[0].values;
 
                         if (uCols.length !== aCols.length) {
-                            setErrorReason(`정보(컬럼) 선택이 잘못되었습니다. 정답은 \${aCols.length}개의 열을 보여주어야 하지만, 현재 \${uCols.length}개의 열만 출력되었습니다. 지문의 '(출력 컬럼: ...)' 내용을 다시 확인해 주세요.`);
+                            setErrorReason(`정보(컬럼) 선택이 잘못되었습니다. 정답은 ${aCols.length}개의 열을 보여주어야 하지만, 현재 ${uCols.length}개의 열만 출력되었습니다.`);
                             setIsCorrect(false);
                         } else if (uValues.length !== aRows.length) {
-                            setErrorReason(`데이터 건수(행)가 정답과 다릅니다. 필터(WHERE) 조건을 확인해 주세요. 정답은 \${aRows.length}건이지만, 현재 \${uValues.length}건이 출력되었습니다.`);
+                            // Smart Grouping Diagnosis
+                            const hasAggregate = /avg|sum|count|min|max/i.test(cleanedQuery);
+                            const hasGroupBy = /group by/i.test(cleanedQuery);
+                            
+                            if (hasAggregate && !hasGroupBy && aRows.length > 1) {
+                                setErrorReason(`[그룹화 오류] 집계 함수(AVG, SUM 등)를 사용했으나 GROUP BY 절이 누락되었습니다. 이로 인해 모든 데이터가 1건으로 합쳐졌습니다. 어떤 기준으로 묶을지 명시해 주세요.`);
+                            } else {
+                                setErrorReason(`데이터 건수(행)가 정답과 다릅니다. 필터(WHERE) 조건을 확인해 주세요. 정답은 ${aRows.length}건이지만, 현재 ${uValues.length}건이 출력되었습니다.`);
+                            }
                             setIsCorrect(false);
                         } else {
                             const normalizeRowValues = (row) => [...row].sort((a, b) => String(a).localeCompare(String(b)));
@@ -343,7 +352,7 @@
                                         <h2 className="text-sm font-black text-blue-600 uppercase tracking-widest">MISSION {active.day}</h2>
                                         <span className="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">검증 모드</span>
                                     </div>
-                                    <h3 className="text-xl font-bold text-slate-900 mb-6 tracking-tight text-left">{active.title}</h3>
+                                    <h3 className="text-xl font-bold text-slate-900 mb-6 tracking-tight text-left break-keep">{active.title}</h3>
                                     
                                     <div className="space-y-4 mb-8 text-left">
                                         <div className="flex items-center gap-2 text-slate-900 text-left">
@@ -439,7 +448,7 @@
                                                         <CustomIcon name="alert" className="w-5 h-5 shrink-0 mt-0.5" />
                                                         <div>
                                                             <p className="uppercase text-[10px] opacity-70 font-black text-left">Logic Diagnosis</p>
-                                                            <p className="font-bold leading-relaxed text-left">{errorReason}</p>
+                                                            <p className="font-bold leading-relaxed text-left break-keep">{errorReason}</p>
                                                         </div>
                                                     </div>
                                                 }
@@ -452,7 +461,7 @@
                         </main>
                     </div>
                     <footer className="bg-white border-t border-slate-200 p-8 text-slate-300 text-[10px] font-black uppercase tracking-[0.4em] text-center shrink-0 relative z-10">
-                        SQL Mastery Course v6.8 - Business Context & Logic Enhanced
+                        SQL Mastery Course v6.9 - Intelligent Grouping Diagnosis
                     </footer>
                 </div>
             );
