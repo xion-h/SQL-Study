@@ -8,7 +8,7 @@
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- sql.js 라이브러리 경로 수정 -->
+    <!-- sql.js 라이브러리: WASM 로딩 안정성 확보 -->
     <script src="https://unpkg.com/sql.js@1.8.0/dist/sql-wasm.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700;900&display=swap');
@@ -98,15 +98,17 @@
                 hint: "city='서울', age 30대, join_date가 20260228보다 큰 조건을 AND로 연결하세요.", 
                 question: `[사업팀] 마케팅 캠페인 대상을 선정하기 위해, 2026년 2월 28일 이후에 가입한 서울 지역의 30대 고객 명단을 알고 싶어 합니다.\n(출력 컬럼: 모든 컬럼)`, 
                 solution: `SELECT *\nFROM Customers\nWHERE\n  1=1\n  AND city = '서울'\n  AND age BETWEEN 30 AND 39\n  AND join_date > '20260228'\n;`, 
-                token: "XN_01_SUCC" 
+                token: "XN_01_SUCC",
+                checkOrder: false 
             },
             { 
                 day: 2, title: "가공과 정렬", tables: ["Customers"], 
                 syntax: "CASE WHEN [조건] THEN [결과] ELSE [나머지] END AS [별칭];\n• 조건의 순서가 중요합니다. 위에서부터 순차적으로 체크됩니다.\n• ORDER BY [컬럼] DESC는 높은 숫자/최신 날짜부터 정렬합니다.", 
-                hint: "나이 < 30 (청년), 나이 < 50 (중년), 그 외 (장년) 조건을 CASE WHEN으로 작성하세요.", 
+                hint: "나이 < 30 (청년), 나이 < 50 (중년), 그 외 (장년) 조건을 CASE WHEN으로 작성하세요. 정렬 시 DESC를 잊지 마세요.", 
                 question: `[영업팀] 고객별 타겟 영업을 위해 고객을 청년(30세 미만), 중년(30세~49세), 장년(50세 이상)으로 분류하고, 나이가 많은 순으로 정렬된 리스트를 요청했습니다.\n(출력 컬럼: name, age, age_group)`, 
                 solution: `SELECT name, age,\n  CASE WHEN age < 30 THEN '청년'\n       WHEN age < 50 THEN '중년'\n       ELSE '장년' END as age_group\nFROM Customers\nORDER BY age DESC\n;`, 
-                token: "XN_02_SUCC" 
+                token: "XN_02_SUCC",
+                checkOrder: true 
             },
             { 
                 day: 3, title: "데이터 형 변환 및 필터", tables: ["Customers"], 
@@ -114,7 +116,8 @@
                 hint: "WHERE join_date > '20260303' 조건을 사용하고, SELECT 절에서 CAST를 적용하세요.", 
                 question: `[고객유지팀] 최근 캠페인 대상 확인을 위해, 2026년 3월 3일 이후에 가입한 고객들의 이름과 숫자 형태(INTEGER)로 변환된 가입날짜 데이터를 확인하려 합니다.\n(출력 컬럼: name, join_date_int)`, 
                 solution: `SELECT name, \n  CAST(join_date AS INTEGER) as join_date_int\nFROM Customers\nWHERE join_date > '20260303'\n;`, 
-                token: "XN_03_SUCC" 
+                token: "XN_03_SUCC",
+                checkOrder: false
             },
             { 
                 day: 4, title: "다중 테이블 결합", tables: ["Customers", "Subscriptions", "Plans"], 
@@ -122,7 +125,8 @@
                 hint: "status가 'Active'인 경우만 필터링하세요.", 
                 question: `[상품팀] 현재 활성화(Active)된 요금제를 이용 중인 고객들의 이름과 해당 요금제 명칭을 매칭하여 인기 요금제 현황을 보고 싶어 합니다.\n(출력 컬럼: name, plan_name)`, 
                 solution: `SELECT C.name, P.plan_name\nFROM Customers C\nJOIN Subscriptions S ON C.id = S.id\nJOIN Plans P ON S.plan_id = P.plan_id\nWHERE\n  1=1\n  AND S.status = 'Active'\n;`, 
-                token: "XN_04_SUCC" 
+                token: "XN_04_SUCC",
+                checkOrder: false
             },
             { 
                 day: 5, title: "통계 요약", tables: ["Customers", "Usage"], 
@@ -130,7 +134,8 @@
                 hint: "id로 JOIN하고 city별로 묶어 집계하세요.", 
                 question: `[사업팀] 지역별 마케팅 효율 측정을 위해 각 지역별 실이용 고객 수와 총 매출액 합계를 분석하고 싶습니다.\n(출력 컬럼: city, user_cnt, total_sales)`, 
                 solution: `SELECT \n  C.city,\n  COUNT(DISTINCT C.id) as user_cnt,\n  SUM(U.sales) as total_sales\nFROM Customers C\nJOIN Usage U ON C.id = U.id\nGROUP BY C.city\n;`, 
-                token: "XN_05_SUCC" 
+                token: "XN_05_SUCC",
+                checkOrder: false
             },
             { 
                 day: 6, title: "조건별 등급 산정", tables: ["Plans"], 
@@ -138,7 +143,8 @@
                 hint: "가격(price)이 80,000원 이상이면 'HVC'로 분류하세요.", 
                 question: `[영업팀] 요금제 상향 판매(Upselling)를 위해 요금제 가격이 80,000원 이상이면 'HVC', 아니면 '그외'로 구분된 상품 등급표를 알고 싶습니다.\n(출력 컬럼: plan_name, price_grade)`, 
                 solution: `SELECT plan_name, \n  CASE WHEN price >= 80000 THEN 'HVC' \n       ELSE '그외' END as price_grade\nFROM Plans\n;`, 
-                token: "XN_06_SUCC" 
+                token: "XN_06_SUCC",
+                checkOrder: false
             },
             { 
                 day: 7, title: "그룹 필터링", tables: ["Customers", "Usage"], 
@@ -146,7 +152,8 @@
                 hint: "평균 매출액이 2000원 이상인 조건은 HAVING 절에 써야 합니다.", 
                 question: `[사업팀] 마케팅 리소스를 집중 투여하기 위해, 평균 매출액이 2,000원 이상인 '고가치 지역' 리스트를 확인하고 싶습니다.\n(출력 컬럼: city, avg_sales)`, 
                 solution: `SELECT city, AVG(sales) as avg_sales\nFROM Customers C\nJOIN Usage U ON C.id = U.id\nGROUP BY city\nHAVING avg_sales >= 2000\n;`, 
-                token: "XN_07_SUCC" 
+                token: "XN_07_SUCC",
+                checkOrder: false
             },
             { 
                 day: 8, title: "서브쿼리 기초", tables: ["Customers", "Usage"], 
@@ -154,7 +161,8 @@
                 hint: "Usage 테이블에서 sales > 3000인 데이터를 먼저 서브쿼리로 추출하세요.", 
                 question: `[사업팀] 핵심 고객 관리를 위해 매출액이 3,000원을 초과한 적이 있는 고객들의 이름과 해당 매출액을 요청했습니다.\n(출력 컬럼: name, sales)`, 
                 solution: `SELECT name, sales\nFROM Customers C\nJOIN (\n  SELECT id, sales \n  FROM Usage \n  WHERE sales > 3000\n) U ON C.id = U.id\n;`, 
-                token: "XN_08_SUCC" 
+                token: "XN_08_SUCC",
+                checkOrder: false
             },
             { 
                 day: 9, title: "WITH절 활용 (CTE)", tables: ["Usage", "Customers"], 
@@ -162,7 +170,8 @@
                 hint: "Day 8의 서브쿼리 부분을 맨 위로 올려서 'WITH high_sales AS (...)'로 정의하세요.", 
                 question: `[유지팀] 유지 전략 보고서 작성을 위해 Day 08과 같은 결과를 추출하되, 가독성을 높이기 위해 WITH 구문을 사용하여 쿼리를 재작성하고 싶습니다.\n(출력 컬럼: name, sales)`, 
                 solution: `WITH high_sales AS (\n  SELECT id, sales \n  FROM Usage \n  WHERE sales > 3000\n)\nSELECT C.name, H.sales\nFROM Customers C\nJOIN high_sales H ON C.id = H.id\n;`, 
-                token: "XN_09_SUCC" 
+                token: "XN_09_SUCC",
+                checkOrder: false
             },
             { 
                 day: 10, title: "최종 실무 리포트", tables: ["Subscriptions", "Customers", "Plans"], 
@@ -170,7 +179,8 @@
                 hint: "status = 'Churned'인 데이터만 필터링하여 지역과 요금제별로 묶으세요.", 
                 question: `[고객유지팀] 해지 원인 분석을 위해 서비스를 해지(Churned)한 고객들이 어느 지역에서, 어떤 요금제를 주로 썼는지 해지 건수 통계 리포트를 알고 싶어 합니다.\n(출력 컬럼: city, plan_name, churn_cnt)`, 
                 solution: `SELECT \n  C.city, \n  P.plan_name, \n  COUNT(*) as churn_cnt\nFROM Subscriptions S\nJOIN Customers C ON S.id = C.id\nJOIN Plans P ON S.plan_id = P.plan_id\nWHERE\n  1=1\n  AND S.status = 'Churned'\nGROUP BY 1, 2\nORDER BY 3 DESC\n;`, 
-                token: "XN_10_SUCC" 
+                token: "XN_10_SUCC",
+                checkOrder: true 
             }
         ];
 
@@ -214,10 +224,9 @@
             const [showVerificationAnswer, setShowVerificationAnswer] = useState(false);
 
             useEffect(() => {
-                const saved = localStorage.getItem('sql_master_v6_final_solved');
+                const saved = localStorage.getItem('sql_master_v7_final_solved');
                 if (saved) setSolvedDays(JSON.parse(saved));
 
-                // initSqlJs 설정 시 unpkg를 사용하여 binary 로딩 이슈 해결
                 initSqlJs({ locateFile: file => `https://unpkg.com/sql.js@1.8.0/dist/${file}` }).then(SQL => {
                     const database = new SQL.Database();
                     Object.keys(schemaData).forEach(name => {
@@ -228,7 +237,6 @@
                     });
                     setDb(database);
                 }).catch(err => {
-                    console.error("SQL Library Load Error:", err);
                     setErrorReason("SQL 엔진 초기화 오류가 발생했습니다. 브라우저를 새로고침 해주세요.");
                 });
             }, []);
@@ -267,8 +275,7 @@
                         setErrorReason("에디터에 쿼리를 먼저 작성해 주세요.");
                         setIsCorrect(false);
                         return;
-                    Parties }
-
+                    }
                     if (!cleanedQuery.endsWith(';')) {
                         throw new Error("missing semicolon");
                     }
@@ -297,20 +304,33 @@
                             }
                             setIsCorrect(false);
                         } else {
-                            const normalizeRowValues = (row) => [...row].sort((a, b) => String(a).localeCompare(String(b)));
-                            const userNormalized = uValues.map(normalizeRowValues).sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
-                            const answerNormalized = aRows.map(normalizeRowValues).sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
-                            const match = JSON.stringify(userNormalized) === JSON.stringify(answerNormalized);
+                            // 고도화된 정규화 비교 알고리즘
+                            const normalizeRowValues = (row) => JSON.stringify([...row].sort()); // 개별 행의 열 순서 무관하게 정규화
+                            
+                            let userRowsStr = uValues.map(normalizeRowValues);
+                            let answerRowsStr = aRows.map(normalizeRowValues);
+
+                            if (!active.checkOrder) {
+                                // 정렬이 상관 없는 미션은 행 순서도 정규화
+                                userRowsStr.sort();
+                                answerRowsStr.sort();
+                            }
+
+                            const match = JSON.stringify(userRowsStr) === JSON.stringify(answerRowsStr);
 
                             if (match) {
                                 setIsCorrect(true);
                                 if (!solvedDays.includes(currentDay)) {
                                     const next = [...solvedDays, currentDay];
                                     setSolvedDays(next);
-                                    localStorage.setItem('sql_master_v6_final_solved', JSON.stringify(next));
+                                    localStorage.setItem('sql_master_v7_final_solved', JSON.stringify(next));
                                 }
                             } else {
-                                setErrorReason("행/열의 개수는 맞지만, 데이터 내용이 다릅니다. 조건의 값이나 범위를 다시 한 번 확인해 보세요.");
+                                if (active.checkOrder) {
+                                    setErrorReason("데이터 건수는 맞지만, 출력된 행의 순서가 정답과 다릅니다. 지문의 정렬(ORDER BY) 조건을 다시 확인해 보세요.");
+                                } else {
+                                    setErrorReason("행/열의 개수는 맞지만, 데이터 내용이 다릅니다. 조건의 값이나 범위를 다시 한 번 확인해 보세요.");
+                                }
                                 setIsCorrect(false);
                             }
                         }
@@ -356,9 +376,9 @@
                                     <h3 className="text-xl font-bold text-slate-900 mb-6 tracking-tight text-left break-keep">{active.title}</h3>
                                     
                                     <div className="space-y-4 mb-8 text-left">
-                                        <div className="flex items-center gap-2 text-slate-900 text-left">
-                                            <CustomIcon name="message" className="w-5 h-5 text-blue-600" />
-                                            <h4 className="font-black text-xs uppercase tracking-widest text-left text-blue-600">비즈니스 상황</h4>
+                                        <div className="flex items-center gap-2 text-slate-900 text-left text-blue-600">
+                                            <CustomIcon name="message" className="w-5 h-5" />
+                                            <h4 className="font-black text-xs uppercase tracking-widest text-left">비즈니스 상황</h4>
                                         </div>
                                         <div className="bg-blue-600 p-6 rounded-2xl text-white shadow-xl shadow-blue-200/50 relative overflow-hidden border-2 border-blue-400 font-bold italic leading-relaxed text-[15px]">
                                             <CustomIcon name="message" className="absolute -bottom-2 -right-2 w-16 h-16 text-blue-500 opacity-20" />
@@ -367,7 +387,7 @@
                                     </div>
 
                                     <div className="bg-slate-50 p-4 rounded-xl mb-6 border border-slate-100 text-left">
-                                        <h4 className="text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest flex items-center gap-1 text-left">
+                                        <h4 className="text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest flex items-center gap-1">
                                             <CustomIcon name="book" className="w-3 h-3" /> 상세 문법 가이드
                                         </h4>
                                         <p className="text-[11px] font-medium text-slate-600 leading-relaxed text-left break-keep whitespace-pre-line">{active.syntax}</p>
@@ -419,12 +439,12 @@
                                                 <div className="overflow-x-auto custom-scrollbar text-left text-left">
                                                     <table className="w-full text-[12px] text-left border-collapse">
                                                         <thead><tr className="border-b text-slate-400 font-bold">
-                                                            {schemaData[name].columns.map(c => <th key={c} className="px-3 py-2 uppercase text-center border-x border-slate-100 text-center">{c}</th>)}
+                                                            {schemaData[name].columns.map(c => <th key={c} className="px-1 py-1 uppercase text-center border-x border-slate-100 text-center">{c}</th>)}
                                                         </tr></thead>
                                                         <tbody>{schemaData[name].samples.map((row, i) => <tr key={i} className="border-b border-slate-50 last:border-0">
                                                             {row.map((val, j) => {
                                                                 const alignClass = typeof val === 'number' ? 'text-left' : 'text-right';
-                                                                return <td key={j} className={`px-3 py-2 font-mono text-slate-500 whitespace-nowrap ${alignClass} border-x border-slate-50`}>{String(val)}</td>;
+                                                                return <td key={j} className={`px-2 py-1 font-mono text-slate-500 whitespace-nowrap ${alignClass} border-x border-slate-50`}>{String(val)}</td>;
                                                             })}
                                                         </tr>)}</tbody>
                                                     </table>
@@ -468,7 +488,7 @@
                         </main>
                     </div>
                     <footer className="bg-white border-t border-slate-200 p-8 text-slate-300 text-[10px] font-black uppercase tracking-[0.4em] text-center shrink-0 relative z-10 text-center">
-                        SQL Mastery Course v7.2 - Bug Fix: WebAssembly Load & Icon Reference Error resolved
+                        SQL Mastery Course v7.3 - Strict Sort Order Enforcement Added
                     </footer>
                 </div>
             );
